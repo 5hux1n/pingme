@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<!-- 「州」定色版，无底板。favicon 拿不到页面 CSS，所以笔画颜色靠 prefers-color-scheme 在文件内部自己切换：
+     浅色标签栏用墨色笔画，深色标签栏自动转成米白。几何与 partials/mark.blade.php 一致（BrandMarkTest 钉住）。 -->
+<style>
+  .s{fill:#161814}
+  @media (prefers-color-scheme: dark){ .s{fill:#f5f1e9} }
+  .a{fill:#b84c35}
+</style>
+<g class="s"><rect x="4.9" y="4.4" width="3.3" height="15.2" rx="1.65"/><rect x="15.4" y="4.4" width="3.3" height="15.2" rx="1.65"/><rect x="10.7" y="6.2" width="3.3" height="11.6" rx="1.65"/></g>
+<g class="a"><circle cx="9.2" cy="8.6" r="2.15"/><circle cx="14.7" cy="15.4" r="2.15"/></g>
+</svg>

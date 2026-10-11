@@ -1,0 +1,35 @@
+-- Project names and descriptions from https://mjh.im on 2026-10-11.
+-- Preserve existing IDs, feedback, visibility and enabled settings.
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('fakenotify','fakenotify','FakeNotify','iOS 原生模拟推送通知插件','#6c5be9','F') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('fanqie','fanqie','番茄净化','番茄小说自定义 App 插件','#6c5be9','番') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('hongguo','hongguo','红果净化','红果短剧的自定义 App 插件','#6c5be9','红') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('xianyu','xianyu','闲鱼助手','闲鱼去广告、自动化助手','#6c5be9','闲') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('fakeperm','fakeperm','虚拟权限','32种手机系统权限管理插件','#6c5be9','虚') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('wclocate','wclocate','WcLocate','微信修改定位插件','#6c5be9','W') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('danmu','danmu','弹幕助手','主流直播平台的快捷发送弹幕工具','#6c5be9','弹') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('alipay2nfc','alipay2nfc','Alipay2NFC','多开支付宝的碰一碰跳转工具。','#6c5be9','A') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('pingme','pingme','PingMe','项目反馈统一入口','#6c5be9','P') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('scratch','scratch','挠一挠','云挠痒痒','#6c5be9','挠') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('domaincheck','domaincheck','DomainCheck','域名注册状态查询工具','#6c5be9','D') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('goforit','goforit','GoForIt.si','Ai 时代，想做就做！','#6c5be9','G') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('nsaa','nsaa','NoShakeAds.com','把广告选择权还给用户','#6c5be9','N') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('relaxin','relaxin','Relaxin.dev','Relaxin 越狱镜像站','#6c5be9','R') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('resetit','resetit','ResetIt.lol','When Codex Reset？','#6c5be9','R') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('isbaby','isbaby','Is.baby','测测你是哪种 Baby','#6c5be9','I') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('tengzhou','tengzhou','Tengzhou.ren','把滕州人连成一张网','#6c5be9','T') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('return-shot','return-shot','网购退货截图生成器','','#6c5be9','网') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('cc','cc','CC 你又想挨揍了','','#6c5be9','C') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('guzi','guzi','抢谷子','','#6c5be9','抢') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('obplayer','obplayer','OBPlayer','无延迟直播流播放器','#6c5be9','O') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('ffcell','ffcell','方方格子离线登录授权','','#6c5be9','方') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('catchcat','catchcat','抓小猫','','#6c5be9','抓') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('cherrymac','cherrymac','CherryMac','Mac 和 Web 版樱桃键盘管理工具','#6c5be9','C') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('nsimg','nsimg','NSImg 助手','NodeSeek 论坛的图床插件','#6c5be9','N') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('codexm','codexm','CodexM','多ChatGPT 账号运行程序','#6c5be9','C') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('shuxin','shuxin','ShuXin（书信）','可自托管的个人微博客','#6c5be9','S') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('m04s','m04s','印先森 M04S','网页蓝牙打印 · Mac 驱动','#6c5be9','印') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('wcsy','wcsy','WcSy','微信情景分析插件 · 实验中','#6c5be9','W') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('silex','silex','Silex','部署属于你自己的越狱源','#6c5be9','S') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('apush','apush','APush','统一推送管理分流规则项目','#6c5be9','A') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('pdd-ship-bot','pdd-ship-bot','PddShipBot','拼多多商家发货 api 助手','#6c5be9','P') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
+INSERT INTO projects(id,slug,name,description,color,icon) VALUES('soleprop-calc','soleprop-calc','个体户税费计算器','一款开源微信小程序','#6c5be9','个') ON CONFLICT(slug) DO UPDATE SET name=excluded.name,description=excluded.description;
