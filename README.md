@@ -55,7 +55,6 @@ npm run deploy
 - 初始化：`npm install && npm run db:local`
 - 本地密钥：复制 `.dev.vars.example` 为 `.dev.vars`，设置本地管理员密码与 session secret。
 - 启动：`npm run dev`
-- `npm test`：接口、认证、密码修改及项目配置回归测试。
 
 通用部署模板默认开启 Turnstile；本地可设置 `TURNSTILE_REQUIRED=false`，或使用官方测试 key。**生产环境务必启用**。如在本地启用 Turnstile，需自行配置测试用 site key 与 secret。
 
