@@ -1,3 +1,4 @@
+import { readAbout, normalizeAbout, publicAbout } from './about-settings.js';
 const json = (data, status = 200, headers = {}) => new Response(JSON.stringify(data), {status, headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff',...headers}});
 const err = (s,m) => json({error:m},s);
 const enc = new TextEncoder();
@@ -31,6 +32,7 @@ async function storeFiles(env,form,ticketId,messageId=null){const files=form.get
 async function getTicket(env,token){if(!/^[a-f0-9]{64}$/.test(token||''))return null;return env.DB.prepare('SELECT t.*,p.name project_name,p.slug project_slug FROM tickets t JOIN projects p ON p.id=t.project_id WHERE t.access_hash=?').bind(await hash(token)).first();}
 async function route(request,env){const url=new URL(request.url), path=url.pathname,method=request.method;
  if(!path.startsWith('/api/'))return env.ASSETS.fetch(request);
+ if(method==='GET'&&path==='/api/about'){const data=await readAbout(env);return json({personal:publicAbout(data.personal)});}
  if(method==='GET'&&path==='/api/config')return json({turnstileSiteKey:env.TURNSTILE_REQUIRED==='true'?(env.TURNSTILE_SITE_KEY||''):''});
  if(method==='GET'&&path==='/api/projects'){const rows=(await env.DB.prepare('SELECT slug,name,description,official_url,color,icon FROM projects WHERE visible=1 AND enabled=1 ORDER BY created_at').all()).results;return json({projects:rows});}
  if(method==='GET'&&/^\/api\/projects\/[a-z0-9-]+$/.test(path)){const slug=path.split('/')[3];const p=await env.DB.prepare('SELECT slug,name,description,official_url,color,icon FROM projects WHERE slug=? AND enabled=1').bind(slug).first();return p?json({project:p}):err(404,'项目不存在或已关闭');}
@@ -61,6 +63,16 @@ async function route(request,env){const url=new URL(request.url), path=url.pathn
  if(method==='GET'&&attachmentMatch){const file=await env.DB.prepare('SELECT * FROM attachments WHERE id=?').bind(attachmentMatch[1]).first();if(!file)return err(404,'文件不存在');const tok=url.searchParams.get('token');if(!await isAdmin(request,env)){const t=await getTicket(env,tok);if(!t||t.id!==file.ticket_id)return err(403,'无权访问');}const obj=await env.FILES.get(file.object_key);if(!obj)return err(404,'附件已丢失');const safeName=file.name.replace(/[\r\n"\\]/g,'_');return new Response(obj.body,{headers:{'content-type':'application/octet-stream','content-disposition':`attachment; filename="${safeName.replace(/[^\x20-\x7e]/g,'_')}"; filename*=UTF-8''${encodeURIComponent(file.name)}`,'x-content-type-options':'nosniff','cache-control':'private, no-store'}});}
  if(!path.startsWith('/api/admin/'))return err(404,'接口不存在');
  if(!await isAdmin(request,env))return err(401,'请先登录');
+ if(method==='GET'&&path==='/api/admin/about')return json(await readAbout(env));
+ if(method==='PUT'&&path==='/api/admin/about'){
+  if(request.headers.get('origin')!==url.origin)return err(403,'请从本站后台保存配置');
+  const body=await request.json().catch(()=>null);if(!body||!Number.isSafeInteger(body.version)||body.version<0)return err(400,'配置版本不正确，请刷新后重试');
+  let personal;try{personal=normalizeAbout(body.personal);}catch(e){return err(400,e.message);}
+  const value=JSON.stringify(personal);
+  const saved=body.version===0?await env.DB.prepare("INSERT OR IGNORE INTO site_settings(key,value,version) VALUES('about',?,1)").bind(value).run():await env.DB.prepare("UPDATE site_settings SET value=?,version=version+1,updated_at=CURRENT_TIMESTAMP WHERE key='about' AND version=?").bind(value,body.version).run();
+  if((saved.meta?.changes??saved.changes)===0)return err(409,'配置已被其他页面修改，请重新加载后再保存');
+  return json({ok:true,personal,version:body.version+1});
+ }
  if(method==='POST'&&path==='/api/admin/password'){
   if(!await rate(env,request,'admin-password',5,900))return err(429,'尝试次数过多，请稍后再试');
   const body=await request.json().catch(()=>({}));const current=String(body.currentPassword??''),next=String(body.newPassword??''),confirm=String(body.confirmPassword??'');
