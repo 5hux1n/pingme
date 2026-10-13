@@ -1,3 +1,4 @@
+import { withImage, fetchImageSource, saveProject, serveProjectImage } from './project-images.js';
 import { readAbout, normalizeAbout, publicAbout } from './about-settings.js';
 const json = (data, status = 200, headers = {}) => new Response(JSON.stringify(data), {status, headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff',...headers}});
 const err = (s,m) => json({error:m},s);
@@ -32,10 +33,11 @@ async function storeFiles(env,form,ticketId,messageId=null){const files=form.get
 async function getTicket(env,token){if(!/^[a-f0-9]{64}$/.test(token||''))return null;return env.DB.prepare('SELECT t.*,p.name project_name,p.slug project_slug FROM tickets t JOIN projects p ON p.id=t.project_id WHERE t.access_hash=?').bind(await hash(token)).first();}
 async function route(request,env){const url=new URL(request.url), path=url.pathname,method=request.method;
  if(!path.startsWith('/api/'))return env.ASSETS.fetch(request);
+ if(['GET','HEAD'].includes(method)&&path.startsWith('/api/project-images/'))return serveProjectImage(request,env);
  if(method==='GET'&&path==='/api/about'){const data=await readAbout(env);return json({personal:publicAbout(data.personal)});}
  if(method==='GET'&&path==='/api/config')return json({turnstileSiteKey:env.TURNSTILE_REQUIRED==='true'?(env.TURNSTILE_SITE_KEY||''):''});
- if(method==='GET'&&path==='/api/projects'){const rows=(await env.DB.prepare('SELECT slug,name,description,official_url,color,icon FROM projects WHERE visible=1 AND enabled=1 ORDER BY created_at').all()).results;return json({projects:rows});}
- if(method==='GET'&&/^\/api\/projects\/[a-z0-9-]+$/.test(path)){const slug=path.split('/')[3];const p=await env.DB.prepare('SELECT slug,name,description,official_url,color,icon FROM projects WHERE slug=? AND enabled=1').bind(slug).first();return p?json({project:p}):err(404,'项目不存在或已关闭');}
+ if(method==='GET'&&path==='/api/projects'){const rows=(await env.DB.prepare('SELECT slug,name,description,official_url,color,icon,image_key FROM projects WHERE visible=1 AND enabled=1 ORDER BY created_at').all()).results;return json({projects:rows.map(withImage)});}
+ if(method==='GET'&&/^\/api\/projects\/[a-z0-9-]+$/.test(path)){const slug=path.split('/')[3];const p=await env.DB.prepare('SELECT slug,name,description,official_url,color,icon,image_key FROM projects WHERE slug=? AND enabled=1').bind(slug).first();return p?json({project:withImage(p)}):err(404,'项目不存在或已关闭');}
  if(method==='POST'&&path==='/api/admin/login'){
   if(!await rate(env,request,'admin-login',8,900))return err(429,'尝试次数过多，请稍后再试');
   const credentials=await adminCredentials(env);if(!env.SESSION_SECRET||(!env.ADMIN_PASSWORD&&!credentials?.password_hash))return err(503,'管理员尚未配置');
@@ -83,9 +85,14 @@ async function route(request,env){const url=new URL(request.url), path=url.pathn
   if((saved.meta?.changes??saved.changes)===0)return err(409,'密码已发生变化，请重新登录');
   return json({ok:true},200,{'set-cookie':'pm_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0'});
  }
- if(method==='GET'&&path==='/api/admin/projects')return json({projects:(await env.DB.prepare('SELECT * FROM projects ORDER BY created_at').all()).results});
- if(method==='POST'&&path==='/api/admin/projects'){const b=await request.json().catch(()=>({}));const slug=clean(b.slug,50).toLowerCase(),name=clean(b.name,80);if(!/^[a-z0-9-]{2,50}$/.test(slug)||!name)return err(400,'项目名称或路径不合法');const officialUrl=clean(b.official_url,1000);if(!validProjectUrl(officialUrl))return err(400,'官网地址必须是有效的 HTTP 或 HTTPS 链接');try{await env.DB.prepare('INSERT INTO projects(id,slug,name,description,official_url,visible,enabled) VALUES(?,?,?,?,?,?,?)').bind(uuid(),slug,name,clean(b.description,200),officialUrl,b.visible?1:0,b.enabled?1:0).run();return json({ok:true},201);}catch{return err(409,'项目路径已存在');}}
- const proj=path.match(/^\/api\/admin\/projects\/([a-z0-9-]+)$/);if(method==='PATCH'&&proj){const b=await request.json().catch(()=>({}));const name=clean(b.name,80);if(!name)return err(400,'项目名称不能为空');const officialUrl=b.official_url===undefined?null:clean(b.official_url,1000);if(!validProjectUrl(officialUrl))return err(400,'官网地址必须是有效的 HTTP 或 HTTPS 链接');await env.DB.prepare('UPDATE projects SET name=?,description=?,official_url=COALESCE(?,official_url),visible=?,enabled=? WHERE slug=?').bind(name,clean(b.description,200),officialUrl,b.visible?1:0,b.enabled?1:0,proj[1]).run();return json({ok:true});}
+ if(method==='POST'&&path==='/api/admin/project-image-source'){
+  if(request.headers.get('origin')!==url.origin)return err(403,'请从本站后台获取图片');
+  if(!await rate(env,request,'project-image',30,3600))return err(429,'图片操作过于频繁，请稍后再试');
+  const body=await request.json().catch(()=>({}));try{const image=await fetchImageSource(body.url);return new Response(image.bytes,{headers:{'content-type':image.type,'cache-control':'no-store','x-content-type-options':'nosniff','content-security-policy':"default-src 'none'; sandbox"}});}catch(e){return err(400,e.name==='TimeoutError'?'图片下载超时，请换个地址重试':e.message);}
+ }
+ if(method==='GET'&&path==='/api/admin/projects'){const rows=(await env.DB.prepare('SELECT * FROM projects ORDER BY created_at').all()).results;return json({projects:rows.map(p=>({...p,image_url:withImage(p).image_url}))});}
+ const projectMatch=path.match(/^\/api\/admin\/projects\/([a-z0-9-]+)$/);
+ if(method==='POST'&&path==='/api/admin/projects'||method==='PATCH'&&projectMatch){const result=await saveProject(request,env,projectMatch?.[1]??null);return result.error?err(result.status,result.error):json(result,method==='POST'?201:200);}
  if(method==='GET'&&path==='/api/admin/tickets'){const status=clean(url.searchParams.get('status'),20),project=clean(url.searchParams.get('project'),50),q=clean(url.searchParams.get('q'),100);const rows=(await env.DB.prepare(`SELECT t.id,t.number,t.kind,t.title,t.status,t.created_at,t.updated_at,p.name project_name,p.slug project_slug FROM tickets t JOIN projects p ON p.id=t.project_id WHERE (?='' OR t.status=?) AND (?='' OR p.slug=?) AND (?='' OR t.title LIKE ? OR t.number LIKE ?) ORDER BY t.updated_at DESC LIMIT 200`).bind(status,status,project,project,q,'%'+q+'%','%'+q+'%').all()).results;return json({tickets:rows});}
  const adt=path.match(/^\/api\/admin\/tickets\/([a-f0-9-]{36})(?:\/(reply))?$/);
  if(adt){const t=await env.DB.prepare('SELECT t.*,p.name project_name,p.slug project_slug FROM tickets t JOIN projects p ON p.id=t.project_id WHERE t.id=?').bind(adt[1]).first();if(!t)return err(404,'反馈不存在');if(method==='GET'&&!adt[2])return json({ticket:{...publicTicket(t),contact:t.contact},messages:await messages(env,t.id),attachments:await attachments(env,t.id)});
