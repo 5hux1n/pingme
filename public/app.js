@@ -1,5 +1,5 @@
 import { createAdmin } from './admin.js?v=20261013-admin-workspace';
-import { projectCatalog, projectCategories } from './project-catalog.js?v=wordmark-feedback';
+import { projectCatalog, projectCategories } from './project-catalog.js?v=20261013-small-icons';
 const root=document.getElementById('app');
 const state={projects:[],selected:null,adminTab:'inbox',adminTickets:[],adminProjects:[],adminTicket:null,filterStatus:'',filterProject:'',search:'',config:{}};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -18,7 +18,7 @@ async function mountTurnstile(host){
 }
 function layout(html){if(turnstileWidget!==null&&window.turnstile){window.turnstile.remove(turnstileWidget);turnstileWidget=null;}root.innerHTML=(html.includes('id="management"')?'':nav())+html;root.querySelectorAll('[data-link]').forEach(a=>a.onclick=e=>{e.preventDefault();go(new URL(a.href).pathname)});}
 
-const glyph=p=>projectCatalog[p.slug]?.image?`<img class="glyph project-icon" src="${esc(projectCatalog[p.slug].image)}" alt="" width="44" height="44"/>`:`<span class="glyph" style="background:var(--primary)">${esc(p.name?.slice(0,1)||'P')}</span>`;
+const glyph=p=>projectCatalog[p.slug]?.image?`<img class="glyph project-icon" src="${esc(projectCatalog[p.slug].image)}" alt="" width="44" height="44" decoding="async"/>`:`<span class="glyph" style="background:var(--primary)">${esc(p.name?.slice(0,1)||'P')}</span>`;
 const projectCard=p=>`<button type="button" class="project-entry project" data-project="${esc(p.slug)}" aria-label="向 ${esc(p.name)} 提交反馈">${glyph(p)}<span><span class="projectname">${esc(p.name)}</span>${p.description?`<span class="projectdesc" style="display:block">${esc(p.description)}</span>`:''}</span><span class="arrow" aria-hidden="true">→</span></button>`;
 function home(){layout(`<main class="shell project-directory"><section class="directory-intro"><div><h1>项目反馈</h1><p>选择项目，提交问题、功能建议或使用疑问。</p></div></section><section class="directory-projects" aria-label="项目选择"><div class="directory-toolbar"><div class="project-categories" role="group" aria-label="项目分类"><button type="button" data-category="all" aria-pressed="true">全部</button>${projectCategories.map(c=>`<button type="button" data-category="${esc(c.id)}" aria-pressed="false">${esc(c.name)}</button>`).join('')}</div><div class="directory-search"><div class="search-morph" data-expanded="false" data-ready="false"><button type="button" class="search-trigger" aria-label="搜索项目" aria-controls="projectSearch" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></button><label class="search-input-label"><span class="sr-only">搜索项目</span><input id="projectSearch" type="search" placeholder="搜索项目名称或功能" autocomplete="off"/></label></div></div></div><div id="projectResults"></div></section></main><footer class="shell foot"><span>Powered by <a href="https://github.com/5hux1n/Pingme" target="_blank" rel="noopener noreferrer">PingMe.PM</a></span></footer>`);
  let category='all';

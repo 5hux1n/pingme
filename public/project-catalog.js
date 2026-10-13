@@ -5,7 +5,7 @@ export const projectCatalog = {
     "name": "FakeNotify",
     "description": "iOS 原生模拟推送通知插件",
     "url": "https://fakenotify.goforit.si/",
-    "image": "/projects/fakenotify.png",
+    "image": "/projects/fakenotify-144-b41b511b57.webp",
     "category": "tweak",
     "categoryName": "iOS 越狱插件",
     "order": 1
@@ -35,7 +35,7 @@ export const projectCatalog = {
     "name": "闲鱼助手",
     "description": "闲鱼去广告、自动化助手",
     "url": "https://xianyu.goforit.si/",
-    "image": "/projects/xianyu.png",
+    "image": "/projects/xianyu-144-5452b2e3aa.webp",
     "category": "tweak",
     "categoryName": "iOS 越狱插件",
     "order": 4
@@ -45,7 +45,7 @@ export const projectCatalog = {
     "name": "虚拟权限",
     "description": "32种手机系统权限管理插件",
     "url": "https://xnqx.goforit.si/",
-    "image": "/projects/fakeperm.png",
+    "image": "/projects/fakeperm-144-22663efdf4.webp",
     "category": "tweak",
     "categoryName": "iOS 越狱插件",
     "order": 5
@@ -55,7 +55,7 @@ export const projectCatalog = {
     "name": "WcLocate",
     "description": "微信修改定位插件",
     "url": "https://apt.mjh.im/depiction/web/im.mjh.wclocate.html",
-    "image": "/projects/wclocate.png",
+    "image": "/projects/wclocate-144-be278754c1.webp",
     "category": "tweak",
     "categoryName": "iOS 越狱插件",
     "order": 6
@@ -65,7 +65,7 @@ export const projectCatalog = {
     "name": "弹幕助手",
     "description": "主流直播平台的快捷发送弹幕工具",
     "url": "https://dmzs.goforit.si/",
-    "image": "/projects/danmu.png",
+    "image": "/projects/danmu-144-31351a8408.webp",
     "category": "tweak",
     "categoryName": "iOS 越狱插件",
     "order": 7
@@ -75,7 +75,7 @@ export const projectCatalog = {
     "name": "Alipay2NFC",
     "description": "多开支付宝的碰一碰跳转工具。",
     "url": "https://apt.mjh.im/depiction/web/im.mjh.alipay2nfc.html",
-    "image": "/projects/alipay2nfc.png",
+    "image": "/projects/alipay2nfc-144-35e8b62341.webp",
     "category": "tweak",
     "categoryName": "iOS 越狱插件",
     "order": 8
@@ -135,7 +135,7 @@ export const projectCatalog = {
     "name": "Relaxin.dev",
     "description": "Relaxin 越狱镜像站",
     "url": "https://relaxin.dev",
-    "image": "/projects/relaxin.png",
+    "image": "/projects/relaxin-144-dcc566168d.webp",
     "category": "web",
     "categoryName": "网站项目",
     "order": 14
@@ -175,7 +175,7 @@ export const projectCatalog = {
     "name": "网购退货截图生成器",
     "description": "",
     "url": "",
-    "image": "/projects/return-shot-official.png",
+    "image": "/projects/return-shot-official-144-01c87e6335.webp",
     "category": "miniapp",
     "categoryName": "小程序",
     "order": 18
@@ -185,7 +185,7 @@ export const projectCatalog = {
     "name": "CC 你又想挨揍了",
     "description": "",
     "url": "",
-    "image": "/projects/cc-official.png",
+    "image": "/projects/cc-official-144-7cd98be1cb.webp",
     "category": "miniapp",
     "categoryName": "小程序",
     "order": 19
@@ -195,7 +195,7 @@ export const projectCatalog = {
     "name": "抢谷子",
     "description": "",
     "url": "",
-    "image": "/projects/guzi-official.png",
+    "image": "/projects/guzi-official-144-34f6076946.webp",
     "category": "miniapp",
     "categoryName": "小程序",
     "order": 20
@@ -205,7 +205,7 @@ export const projectCatalog = {
     "name": "OBPlayer",
     "description": "无延迟直播流播放器",
     "url": "https://obplayer.goforit.si/",
-    "image": "/projects/obplayer.png",
+    "image": "/projects/obplayer-144-680a3df2e4.webp",
     "category": "software",
     "categoryName": "软件",
     "order": 27
@@ -215,7 +215,7 @@ export const projectCatalog = {
     "name": "方方格子离线登录授权",
     "description": "",
     "url": "",
-    "image": "/projects/ffcell-official.png",
+    "image": "/projects/ffcell-official-144-4fbc22212f.webp",
     "category": "miniapp",
     "categoryName": "小程序",
     "order": 22
@@ -225,7 +225,7 @@ export const projectCatalog = {
     "name": "抓小猫",
     "description": "",
     "url": "",
-    "image": "/projects/catchcat-official.png",
+    "image": "/projects/catchcat-official-144-f97f75b97a.webp",
     "category": "miniapp",
     "categoryName": "小程序",
     "order": 23
@@ -245,7 +245,7 @@ export const projectCatalog = {
     "name": "NSImg 助手",
     "description": "NodeSeek 论坛的图床插件",
     "url": "https://nsimg.goforit.si/",
-    "image": "/projects/nsimg.png",
+    "image": "/projects/nsimg-144-6281ac4cc5.webp",
     "category": "software",
     "categoryName": "软件",
     "order": 25
@@ -255,7 +255,7 @@ export const projectCatalog = {
     "name": "CodexM",
     "description": "多ChatGPT 账号运行程序",
     "url": "https://codexm.goforit.si/",
-    "image": "/projects/codexm.png",
+    "image": "/projects/codexm-144-5df959b0a6.webp",
     "category": "software",
     "categoryName": "软件",
     "order": 26
@@ -295,7 +295,7 @@ export const projectCatalog = {
     "name": "Silex",
     "description": "部署属于你自己的越狱源",
     "url": "https://github.com/5hux1n/Silex",
-    "image": "/projects/silex.png",
+    "image": "/projects/silex-144-dbf9dbc9c9.webp",
     "category": "opensource",
     "categoryName": "开源项目",
     "order": 31
