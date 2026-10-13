@@ -1,10 +1,10 @@
-import { createAdmin } from './admin.js?v=20261014-admin-layout';
+import { createAdmin } from './admin.js?v=20261014-admin-loading';
 const root=document.getElementById('app');
 const state={projects:[],categories:[],selected:null,adminTab:'inbox',adminTickets:[],adminProjects:[],adminTicket:null,filterStatus:'',filterProject:'',search:'',config:{}};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const el=(html)=>{const d=document.createElement('div');d.innerHTML=html;return d.firstElementChild;};
 const $=(sel)=>root.querySelector(sel);
-async function api(path,opts={}){const r=await fetch('/api'+path,{credentials:'same-origin',...opts});let data;try{data=await r.json()}catch{throw Error('服务暂时不可用')}if(!r.ok)throw Error(data.error||'请求失败');return data;}
+async function api(path,opts={}){const r=await fetch('/api'+path,{credentials:'same-origin',...opts});let data;try{data=await r.json()}catch{throw Error('服务暂时不可用')}if(!r.ok){const error=Error(data.error||'请求失败');error.status=r.status;throw error;}return data;}
 const jsonOpt=b=>({method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b)});
 const go=p=>{if(location.pathname.startsWith('/admin')&&!admin.leave())return;history.pushState({},'',p);render()};
 window.addEventListener('popstate',()=>render());
@@ -100,6 +100,7 @@ function detailMarkup(data,token='',admin=false){const t=data.ticket;return `<di
 async function publicDetail(token){layout(`<main class="shell detail fade"><button class="back" id="goback">← 返回首页</button><div id="dArea">正在加载…</div></main>`);$('#goback').onclick=()=>go('/');try{const data=await api('/t/'+token);if(location.pathname!=='/t/'+token)return;$('#dArea').innerHTML=detailMarkup(data,token)+(data.ticket.status!=='closed'?`<form id="replyForm" style="margin-top:35px"><div class="field"><label>补充说明 / 回复开发者</label><textarea name="body" placeholder="还想补充什么？"></textarea></div><div class="field"><label>补充附件（选填）</label><input type="file" name="files" multiple accept=".png,.jpg,.jpeg,.webp,.gif,.heic,.mp4,.mov,.webm,.txt,.log,.crash,.ips,.json,.zip,.pdf"/></div><div id="replyError"></div><button class="primary">发送回复 →</button></form>`:'');const form=$('#replyForm');if(form)form.onsubmit=async e=>{e.preventDefault();const btn=form.querySelector('button');btn.disabled=true;try{await api('/t/'+token+'/reply',{method:'POST',body:new FormData(form)});publicDetail(token);}catch(ex){$('#replyError').innerHTML=`<div class="alert">${esc(ex.message)}</div>`;btn.disabled=false;}};}catch(ex){$('#dArea').innerHTML=`<div class="alert">${esc(ex.message)}</div>`;}}
 const admin = createAdmin({root,state,api,jsonOpt,esc,layout,glyph,detailMarkup,statuses});
 const adminPage=()=>admin.page();
-async function render(){const path=decodeURIComponent(location.pathname);if(path==='/admin'||path.startsWith('/admin/'))return adminPage();if(path==='/about')return about();if(path.startsWith('/t/'))return publicDetail(path.slice(3));if(path==='/'||path==='/index.html')return home();if(/^\/[a-z0-9-]+$/.test(path))return formPage(path.slice(1));layout('<main class="shell center">页面不存在。 <a href="/" data-link>返回首页</a></main>');}
-async function init(){try{const [p,c]=await Promise.all([api('/projects'),api('/config')]);state.projects=p.projects;state.categories=p.categories;state.config=c;}catch{state.projects=[];}render();}
-init();
+let publicReady=false,publicRequest;
+async function loadPublic(){if(publicReady)return;if(!publicRequest)publicRequest=Promise.all([api('/projects'),api('/config')]).then(([p,c])=>{state.projects=p.projects;state.categories=p.categories;state.config=c;publicReady=true;}).finally(()=>publicRequest=null);return publicRequest;}
+async function render(){const path=decodeURIComponent(location.pathname);if(path==='/admin'||path.startsWith('/admin/'))return adminPage();if(!publicReady){try{await loadPublic();}catch{state.projects=[];}if(location.pathname!==path)return;}if(path==='/about')return about();if(path.startsWith('/t/'))return publicDetail(path.slice(3));if(path==='/'||path==='/index.html')return home();if(/^\/[a-z0-9-]+$/.test(path))return formPage(path.slice(1));layout('<main class="shell center">页面不存在。 <a href="/" data-link>返回首页</a></main>');}
+render();

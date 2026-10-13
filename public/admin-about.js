@@ -3,7 +3,7 @@ export function createAboutEditor({root,api,esc,setDirty,isDirty,isActive,canLea
  const sections=[['profile','个人资料'],['contacts','联系方式'],['communities','社交账号'],['sites','个人站点'],['support','支持开发']];
  const titles={contacts:'contactTitle',communities:'communityTitle',sites:'sitesTitle',support:'supportTitle'};
  const icons=[['wechat','微信'],['qq','QQ'],['email','邮箱'],['telegram','Telegram'],['x','X'],['douyin','抖音'],['github','GitHub'],['nodeseek','NodeSeek'],['website','网站'],['rss','博客'],['alipay','支付宝'],['paypal','PayPal'],['coffee','Ko-fi']];
- let draft,version=0,loading=0,selected='profile';const opened=new Set();
+ let draft,snapshot,version=0,loading=0,selected='profile';const opened=new Set();
  const field=(name,label,value,max=200,required=false,textarea=false)=>`<div class="field"><label for="about-${esc(name)}">${esc(label)}</label>${textarea?`<textarea id="about-${esc(name)}" name="${esc(name)}" maxlength="${max}" ${required?'required':''}>${esc(value??'')}</textarea>`:`<input id="about-${esc(name)}" name="${esc(name)}" value="${esc(value??'')}" maxlength="${max}" ${required?'required':''}/>`}</div>`;
  function collect(){const form=$('#aboutEditor');if(!form)return;for(const input of form.querySelectorAll('[name]')){const path=input.name.split('.');if(path.length===1)draft[path[0]]=input.value;else draft[path[0]][Number(path[1])][path[2]]=input.type==='checkbox'?input.checked:input.value;}}
  function menus(){
@@ -12,7 +12,7 @@ export function createAboutEditor({root,api,esc,setDirty,isDirty,isActive,canLea
  }
  function refreshButton(){
   $('#projectHeaderTools').innerHTML='<button type="button" id="resetAbout" class="manage-heading-refresh" aria-label="刷新关于页面" title="刷新关于页面"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.1 7a7 7 0 0 1 11.6-1L20 9M4 15l2.3 3A7 7 0 0 0 18 17"/></svg></button>';
-  $('#resetAbout').onclick=()=>{if(canLeave())open();};
+  $('#resetAbout').onclick=()=>{if(canLeave())open(true);};
  }
  const actionIcon=kind=>`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${kind==='up'?'<path d="m6 14 6-6 6 6"/>':kind==='down'?'<path d="m6 10 6 6 6-6"/>':'<path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6"/>'}</svg>`;
  function itemFields(item,index,section){
@@ -35,11 +35,18 @@ export function createAboutEditor({root,api,esc,setDirty,isDirty,isActive,canLea
   root.querySelectorAll('[data-move]').forEach(button=>button.onclick=()=>modify(()=>{const a=Number(button.dataset.move),b=a+Number(button.dataset.direction);const items=draft[button.dataset.section];[items[a],items[b]]=[items[b],items[a]];}));
   form.onsubmit=async event=>{
    event.preventDefault();collect();const saveRevision=loading;const controls=[...form.querySelectorAll('input,textarea,select,button'),...root.querySelectorAll('[data-about-section]'),$('#resetAbout')].map(control=>[control,control.disabled]);controls.forEach(([control])=>control.disabled=true);$('#aboutSaveStatus').classList.remove('alert');$('#aboutSaveStatus').textContent='正在保存…';
-   try{const data=await api('/admin/about',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({personal:draft,version})});if(!isActive()||saveRevision!==loading)return;draft=data.personal;version=data.version;setDirty(false);if(isActive()){menus();editor();$('#aboutSaveStatus').textContent='关于页面已保存';}}
+   try{const data=await api('/admin/about',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify({personal:draft,version})});if(!isActive()||saveRevision!==loading)return;snapshot=structuredClone(data);draft=data.personal;version=data.version;setDirty(false);if(isActive()){menus();editor();$('#aboutSaveStatus').textContent='关于页面已保存';}}
    catch(error){if(isActive()&&$('#aboutSaveStatus')){$('#aboutSaveStatus').classList.add('alert');$('#aboutSaveStatus').textContent=error.message;}}
    finally{controls.forEach(([control,disabled])=>{if(control.isConnected)control.disabled=disabled;});}
   };
  }
- async function open(){const revision=++loading;refreshButton();$('#manageSplit').dataset.detail='true';$('#manageColumns').innerHTML='';$('#manageTools').innerHTML='';$('#managePager').innerHTML='';$('#manageRows').innerHTML='';$('#manageDetail').innerHTML='<div class="manage-empty">正在加载配置…</div>';try{const data=await api('/admin/about');if(revision!==loading||!isActive())return;draft=structuredClone(data.personal);version=data.version;setDirty(false);menus();editor();}catch(error){if(isActive())$('#manageDetail').innerHTML=`<div class="manage-empty"><h2>加载失败</h2><p>${esc(error.message)}</p><button type="button" class="outline" id="retryAbout">重试</button></div>`;$('#retryAbout')?.addEventListener('click',open);}}
- return {open};
+ async function open(refresh=false){const revision=++loading;refreshButton();$('#manageSplit').dataset.detail='true';$('#manageColumns').innerHTML='';$('#manageTools').innerHTML='';$('#managePager').innerHTML='';$('#manageRows').innerHTML='';
+  const show=data=>{draft=structuredClone(data.personal);version=data.version;setDirty(false);menus();editor();};
+  if(snapshot){show(snapshot);if(!refresh)return;}else $('#manageDetail').innerHTML='';
+  const controls=refresh?[...($('#aboutEditor')?.querySelectorAll('input,textarea,select,button')||[]),...root.querySelectorAll('[data-about-section]'),$('#resetAbout')].map(control=>[control,control.disabled]):[];controls.forEach(([control])=>control.disabled=true);
+  try{const data=await api('/admin/about');if(revision!==loading||!isActive())return;snapshot=structuredClone(data);show(data);}
+  catch(error){if(revision===loading&&isActive()){if(snapshot){$('#aboutSaveStatus').textContent='刷新失败：'+error.message;}else{$('#manageDetail').innerHTML=`<div class="manage-empty"><h2>加载失败</h2><p>${esc(error.message)}</p><button type="button" class="outline" id="retryAbout">重试</button></div>`;$('#retryAbout')?.addEventListener('click',()=>open(true));}}}
+  finally{controls.forEach(([control,disabled])=>{if(control.isConnected)control.disabled=disabled;});if(revision===loading&&isActive()&&$('#resetAbout'))$('#resetAbout').disabled=false;}
+ }
+ return {open,prime(data){snapshot=structuredClone(data);},clear(){loading++;snapshot=null;draft=null;version=0;opened.clear();}};
 }

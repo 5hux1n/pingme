@@ -32,6 +32,15 @@ async function attachments(env,id){return (await env.DB.prepare('SELECT id,name,
 async function storeFiles(env,form,ticketId,messageId=null){const files=form.getAll('files').filter(f=>f instanceof File && f.size>0);if(files.length>5)throw new Error('最多上传 5 个附件');for(const file of files){if(file.size>10*1024*1024)throw new Error('单个附件不能超过 10MB');if(!allowedExt.has(fileExt(file.name))||!allowedTypes.has(file.type))throw new Error('不支持的附件格式：'+file.name);}
  for(const file of files){const id=uuid(), key=`${ticketId}/${id}`;await env.FILES.put(key,file.stream(),{httpMetadata:{contentType:'application/octet-stream'}});await env.DB.prepare('INSERT INTO attachments(id,ticket_id,message_id,name,mime,bytes,object_key) VALUES(?,?,?,?,?,?,?)').bind(id,ticketId,messageId,clean(file.name,150),file.type||'application/octet-stream',file.size,key).run();}}
 async function getTicket(env,token){if(!/^[a-f0-9]{64}$/.test(token||''))return null;return env.DB.prepare('SELECT t.*,p.name project_name,p.slug project_slug FROM tickets t JOIN projects p ON p.id=t.project_id WHERE t.access_hash=?').bind(await hash(token)).first();}
+async function adminSnapshot(env){
+ const [projects,groups,tickets,about]=await Promise.all([
+  env.DB.prepare(`SELECT p.*,COALESCE(c.name,'其他项目') category_name FROM projects p LEFT JOIN project_categories c ON c.id=p.category ORDER BY ${projectOrder}`).all(),
+  categories(env),
+  env.DB.prepare('SELECT t.id,t.number,t.kind,t.title,t.status,t.created_at,t.updated_at,p.name project_name,p.slug project_slug FROM tickets t JOIN projects p ON p.id=t.project_id ORDER BY t.updated_at DESC LIMIT 200').all(),
+  readAbout(env)
+ ]);
+ return {projects:projects.results.map(p=>({...p,image_url:withImage(p).image_url})),categories:groups,tickets:tickets.results,about};
+}
 async function route(request,env){const url=new URL(request.url), path=url.pathname,method=request.method;
  if(!path.startsWith('/api/'))return env.ASSETS.fetch(request);
  if(['GET','HEAD'].includes(method)&&path.startsWith('/api/project-images/'))return serveProjectImage(request,env);
@@ -44,10 +53,10 @@ async function route(request,env){const url=new URL(request.url), path=url.pathn
   if(!await rate(env,request,'admin-login',8,900))return err(429,'尝试次数过多，请稍后再试');
   const credentials=await adminCredentials(env);if(!env.SESSION_SECRET||(!env.ADMIN_PASSWORD&&!credentials?.password_hash))return err(503,'管理员尚未配置');
   const body=await request.json().catch(()=>({}));const password=String(body.password??'');if(password.length>200||!await passwordMatches(password,env,credentials))return err(401,'密码错误');
-  const stamp=String(Date.now()+86400000),sig=await sign(sessionValue(stamp,credentials),env.SESSION_SECRET);return json({ok:true},200,{'set-cookie':`pm_session=${stamp}.${sig}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=86400`});
+  const stamp=String(Date.now()+86400000),sig=await sign(sessionValue(stamp,credentials),env.SESSION_SECRET);return json({ok:true,snapshot:await adminSnapshot(env)},200,{'set-cookie':`pm_session=${stamp}.${sig}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=86400`});
  }
  if(method==='POST'&&path==='/api/admin/logout')return json({ok:true},200,{'set-cookie':'pm_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0'});
- if(method==='GET'&&path==='/api/admin/me')return json({authenticated:await isAdmin(request,env)});
+ if(method==='GET'&&path==='/api/admin/me'){const authenticated=await isAdmin(request,env);return json({authenticated,...(authenticated?{snapshot:await adminSnapshot(env)}:{})});}
  if(method==='POST'&&path==='/api/tickets'){
   if(!await rate(env,request,'feedback',8,3600))return err(429,'提交过于频繁，请稍后再试');
   if(Number(request.headers.get('content-length')||0)>53*1024*1024)return err(413,'附件总大小超出限制');
