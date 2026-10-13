@@ -97,5 +97,5 @@ async function publicDetail(token){layout(`<main class="shell detail fade"><butt
 const admin = createAdmin({root,state,api,jsonOpt,esc,layout,glyph,projectCatalog,projectCategories,detailMarkup,statuses});
 const adminPage=()=>admin.page();
 async function render(){const path=decodeURIComponent(location.pathname);if(path==='/admin'||path.startsWith('/admin/'))return adminPage();if(path==='/about')return about();if(path.startsWith('/t/'))return publicDetail(path.slice(3));if(path==='/'||path==='/index.html')return home();if(/^\/[a-z0-9-]+$/.test(path))return formPage(path.slice(1));layout('<main class="shell center">页面不存在。 <a href="/" data-link>返回首页</a></main>');}
-async function init(){if(location.pathname==='/admin'||location.pathname.startsWith('/admin/')){render();return;}try{const [p,c]=await Promise.all([api('/projects'),api('/config')]);state.projects=p.projects;state.config=c;}catch{state.projects=[];}render();}
+async function init(){try{const [p,c]=await Promise.all([api('/projects'),api('/config')]);state.projects=p.projects;state.config=c;}catch{state.projects=[];}render();}
 init();
