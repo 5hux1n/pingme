@@ -1,4 +1,4 @@
-import { createAdmin } from './admin.js?v=20261013-unified-catalog';
+import { createAdmin } from './admin.js?v=20261014-admin-layout';
 const root=document.getElementById('app');
 const state={projects:[],categories:[],selected:null,adminTab:'inbox',adminTickets:[],adminProjects:[],adminTicket:null,filterStatus:'',filterProject:'',search:'',config:{}};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

@@ -15,7 +15,7 @@
 
 ## 自行部署到 Cloudflare
 
-依赖 Node.js 22.13+、npm、Git，以及已开通 Workers、D1 和 R2 的 Cloudflare 账户。前端使用原生 HTML/CSS/JavaScript，生产运行在 Workers，无需额外前端构建步骤。
+依赖 Node.js 22.13+、npm、Git，以及已开通 Workers、D1 和 R2 的 Cloudflare 账户。访客页面使用原生 HTML/CSS/JavaScript；后台项目管理及筛选控件使用 React 与 Ant Design。生产运行在 Workers，`npm run dev` 和 `npm run deploy` 会自动构建后台资源。
 
 仓库中的 `wrangler.jsonc` 是通用部署模板，不包含维护者的 Cloudflare 账户、数据库 ID 或域名路由。填写自己的资源与密钥后即可部署：
 
@@ -68,13 +68,15 @@ npm run deploy
 - 文件限制以服务器端扩展名、MIME、大小进行基础校验，**不等同于病毒扫描**。不要在服务器执行上传的文件；管理员下载未知日志、压缩包前要自行检查。
 - 崩溃日志可能包含用户名、路径、令牌等个人信息：提交时提示用户检查，建议配置清理/保留政策。
 - 当前没有邮件推送、注册系统、附件内容预览、实时监控、自动崩溃抓取或项目 SDK。这些不属于此版本范围。
-- 为保持部署简单，未引入前端构建工具；直接编辑 `public/` 与 `src/worker.js` 即可。
+- 访客页面直接编辑 `public/`；后台项目管理和共享控件编辑 `frontend/`，使用 `npm run build:admin` 生成后台资源；接口位于 `src/worker.js`。后台资源仅在管理页面加载。
 
 ## 目录
 
 - `public/index.html` 页面入口
 - `public/style.css` 样式与响应式布局
 - `public/app.js` 访客前端（单页路由）
+- `frontend/projects.jsx` 后台项目管理、分类管理与共享筛选控件
+- `scripts/build-admin.mjs` 后台资源构建脚本
 - `public/admin.js` 管理后台工作区与修改密码
 - `src/worker.js` API、认证、文件上传与权限
 - `schema.sql` D1 建表与默认分类

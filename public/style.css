@@ -392,13 +392,90 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .manage-ticket-status{padding-top:24px}.manage-ticket-status .field{flex:none;width:200px}.manage-detail #adminReply{margin-top:20px;padding-top:24px;border-top:1px solid #eef0f4}.manage-detail #adminReply textarea{min-height:130px}
 .manage-detail .manage-editor-actions button,.manage-detail button.primary,.manage-ticket-status button{font-size:13px;padding:11px 18px;border-radius:8px}.manage-settings strong{font-size:13px}.manage-settings small{font-size:12px}.manage-empty{padding:80px 24px}.manage-empty h2{font-size:16px}
 .management[data-tab="about"] .manage-split[data-detail="true"]>.manage-list{display:flex;flex:0 0 auto;min-height:0;height:auto}.management[data-tab="about"] .manage-rows,.management[data-tab="about"] .manage-pagination{display:none}
-.management[data-tab="about"] .manage-list-tools{display:flex;align-items:center;gap:28px;border-bottom:1px solid #edf0f4;padding:0 24px;overflow:auto}
-.management[data-tab="about"] [data-about-section]{display:block;min-height:57px;width:auto;flex:none;padding:17px 0;border:0;border-bottom:2px solid transparent;border-radius:0;background:none}.management[data-tab="about"] [data-about-section].selected{border-bottom-color:#404040}.management[data-tab="about"] [data-about-section] .manage-row-text strong{font-size:13px;color:#858b97}.management[data-tab="about"] [data-about-section].selected strong{color:#262626}.management[data-tab="about"] [data-about-section] small{display:none}
+
+
 .management[data-tab="about"] .manage-detail{padding-top:30px}
 .management button:focus-visible,.management a:focus-visible{outline:2px solid #737373;outline-offset:3px}
 @media(max-width:1100px){.manage-sidebar{padding:0 24px;gap:24px}.manage-account a{display:none}.management-main{padding:0 24px 24px}.manage-columns,.manage-ticket{grid-template-columns:minmax(180px,1fr) 120px 90px 100px 14px;gap:14px}.manage-sidebar button{font-size:12px;padding:10px 12px}}
-@media(max-width:760px){.management{height:100dvh;min-height:0;display:flex;padding:0}.manage-sidebar{height:auto;min-height:112px;padding:12px 16px 0;gap:4px 10px;flex-wrap:wrap;align-content:start}.manage-brand img{width:84px;height:36px}.manage-sidebar nav{order:3;height:48px;width:100%;gap:10px}.manage-sidebar nav button{height:48px;border-radius:0;border-bottom:2px solid transparent;padding:10px 8px;background:none;font-size:12px}.manage-sidebar nav button.active{border-bottom-color:#404040;background:none}.manage-sidebar nav button.active:hover{background:none}.manage-sidebar nav svg{width:16px;height:16px}.manage-account{margin-left:auto;gap:3px}.manage-account button{font-size:11px;padding:6px}.manage-account button svg{display:none}.manage-sidebar #logout{padding:6px}.management-main{padding:0 14px 14px}.manage-header{height:82px;min-height:82px;padding:19px 3px}.manage-header h1{font-size:22px}.manage-header>div{gap:10px}.manage-header #manageSummary{font-size:11px}.manage-header .primary{font-size:11px;padding:9px 12px}.manage-split{display:flex;border-radius:10px}.manage-list{height:auto;min-height:0}.manage-list-tools{padding:0 14px}.manage-status-tabs{height:50px;gap:20px}.manage-status-tabs button{font-size:12px}.manage-toolbar{padding:14px 0;gap:10px;flex-wrap:wrap}.manage-search{width:100%;flex:1 1 100%}.manage-filters{width:100%;justify-content:space-between}.manage-filters select{max-width:75%;flex:1}.manage-columns{display:none}.manage-ticket{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 12px;padding:17px 16px}.manage-ticket .manage-row-text{grid-column:1;grid-row:1;gap:7px}.manage-row-text strong{font-size:13px}.manage-row-text small{font-size:10px}.manage-ticket .manage-status-pill{grid-column:2;grid-row:1;align-self:start;font-size:10px}.manage-ticket-project{grid-column:1;grid-row:2;font-size:11px}.manage-ticket-time{grid-column:2;grid-row:2;font-size:10px}.manage-ticket .manage-row-arrow{display:none}.manage-pagination{padding:12px;font-size:10px;gap:6px}.manage-pagination>div{gap:8px}.manage-pagination button{font-size:10px;padding:7px 8px}.manage-detail{padding:22px 18px;min-height:0;overflow:auto}.manage-detail h1{font-size:22px}.manage-detail .manage-editor-heading h2{font-size:21px}.manage-detail .contentbox{padding:16px;font-size:13px}.manage-detail .pair{grid-template-columns:1fr;gap:0}.manage-ticket-status .field{flex:1;width:auto}.management[data-tab="projects"] .manage-list-tools{display:flex;flex-wrap:wrap;padding:16px;gap:12px}.management[data-tab="projects"] .manage-columns{display:none}.manage-project{padding:16px}.manage-project .manage-badge{margin-right:0}.manage-project .manage-row-arrow{display:none}.management[data-tab="about"] .manage-list-tools{gap:22px;padding:0 16px}.management[data-tab="about"] [data-about-section] .manage-row-text strong{font-size:12px}.about-entry{padding:16px 12px}.manage-detail .manage-editor-actions{flex-wrap:wrap}.manage-path span{font-size:11px}.manage-empty{padding:60px 18px}}
+@media(max-width:760px){.management{height:100dvh;min-height:0;display:flex;padding:0}.manage-sidebar{height:auto;min-height:112px;padding:12px 16px 0;gap:4px 10px;flex-wrap:wrap;align-content:start}.manage-brand img{width:84px;height:36px}.manage-sidebar nav{order:3;height:48px;width:100%;gap:10px}.manage-sidebar nav button{height:48px;border-radius:0;border-bottom:2px solid transparent;padding:10px 8px;background:none;font-size:12px}.manage-sidebar nav button.active{border-bottom-color:#404040;background:none}.manage-sidebar nav button.active:hover{background:none}.manage-sidebar nav svg{width:16px;height:16px}.manage-account{margin-left:auto;gap:3px}.manage-account button{font-size:11px;padding:6px}.manage-account button svg{display:none}.manage-sidebar #logout{padding:6px}.management-main{padding:0 14px 14px}.manage-header{height:82px;min-height:82px;padding:19px 3px}.manage-header h1{font-size:22px}.manage-header>div{gap:10px}.manage-header #manageSummary{font-size:11px}.manage-header .primary{font-size:11px;padding:9px 12px}.manage-split{display:flex;border-radius:10px}.manage-list{height:auto;min-height:0}.manage-list-tools{padding:0 14px}.manage-status-tabs{height:50px;gap:20px}.manage-status-tabs button{font-size:12px}.manage-toolbar{padding:14px 0;gap:10px;flex-wrap:wrap}.manage-search{width:100%;flex:1 1 100%}.manage-filters{width:100%;justify-content:space-between}.manage-filters select{max-width:75%;flex:1}.manage-columns{display:none}.manage-ticket{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 12px;padding:17px 16px}.manage-ticket .manage-row-text{grid-column:1;grid-row:1;gap:7px}.manage-row-text strong{font-size:13px}.manage-row-text small{font-size:10px}.manage-ticket .manage-status-pill{grid-column:2;grid-row:1;align-self:start;font-size:10px}.manage-ticket-project{grid-column:1;grid-row:2;font-size:11px}.manage-ticket-time{grid-column:2;grid-row:2;font-size:10px}.manage-ticket .manage-row-arrow{display:none}.manage-pagination{padding:12px;font-size:10px;gap:6px}.manage-pagination>div{gap:8px}.manage-pagination button{font-size:10px;padding:7px 8px}.manage-detail{padding:22px 18px;min-height:0;overflow:auto}.manage-detail h1{font-size:22px}.manage-detail .manage-editor-heading h2{font-size:21px}.manage-detail .contentbox{padding:16px;font-size:13px}.manage-detail .pair{grid-template-columns:1fr;gap:0}.manage-ticket-status .field{flex:1;width:auto}.management[data-tab="projects"] .manage-list-tools{display:flex;flex-wrap:wrap;padding:16px;gap:12px}.management[data-tab="projects"] .manage-columns{display:none}.manage-project{padding:16px}.manage-project .manage-badge{margin-right:0}.manage-project .manage-row-arrow{display:none}.about-entry{padding:16px 12px}.manage-detail .manage-editor-actions{flex-wrap:wrap}.manage-path span{font-size:11px}.manage-empty{padding:60px 18px}}
 
-.project-image-field{margin:0 0 26px;padding:18px;border:1px solid var(--border);border-radius:10px;min-width:0}.project-image-field legend{font-size:13px;font-weight:600;padding:0 6px}.project-image-options{display:flex;gap:6px;margin-bottom:16px}.project-image-options button{border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--muted);padding:7px 12px;font-size:12px}.project-image-options button[aria-pressed="true"]{background:var(--soft);color:var(--ink);border-color:#bcbcbc}.project-image-preview{display:flex;align-items:center;height:52px;margin-bottom:14px}.project-image-preview img,.project-image-preview .glyph{width:48px;height:48px;object-fit:contain;border-radius:10px}.project-image-field input{max-width:100%;width:100%;padding:10px;border:1px solid var(--border);border-radius:7px;background:#fff;font-size:12px}.project-image-field small{display:block;font-size:11px;color:var(--muted);line-height:1.8;margin:8px 0}.project-image-field .outline{font-size:11px;padding:7px 11px;border-radius:6px}.project-image-actions{display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap}#projectImageStatus{font-size:11px;color:var(--muted)}
 
-.manage-header .manage-header-actions{display:flex;align-items:center;gap:10px}.manage-header-actions .outline{font-size:12px;padding:10px 14px;border-radius:8px}.category-dialog{max-width:620px}.category-list{display:flex;gap:6px;flex-wrap:wrap;margin:20px 0}.category-list button{display:flex;align-items:center;gap:8px;padding:7px 10px;background:white;border:1px solid var(--border);border-radius:7px;font-size:12px}.category-list button.selected{background:var(--soft);border-color:#aaa}.category-list small{color:var(--muted);font-size:10px}#categoryMessage{font-size:12px;line-height:1.8;color:var(--muted)}@media(max-width:760px){.manage-header-actions .outline{font-size:11px;padding:9px 10px}.manage-header .manage-header-actions{gap:6px}}
+
+/* Flat about-entry header with compact, accessible actions. */
+.about-entry{border:0;border-top:1px solid var(--border);border-radius:0;padding:16px 0;margin:18px 0}
+.about-entry-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.about-entry-heading h3{font-size:13px;font-weight:600;margin:0}
+.about-entry-actions{margin:0;gap:2px}
+.about-entry-actions button{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;min-height:32px;padding:0;border:0;background:transparent;border-radius:6px;color:#777}
+.about-entry-actions button:hover:not(:disabled){background:#f3f3f3;color:#262626}
+.about-entry-actions button.danger:hover:not(:disabled){color:#b42318;background:#fff1f0}
+.about-entry-actions button:disabled{opacity:.3}
+@media(max-width:760px){.about-entry{padding:16px 0}}
+
+.management[data-tab="about"] #manageSummary{display:none}
+
+
+/* Shared admin heading and flat workspace layout. */
+.management .manage-header{height:84px;min-height:84px;padding:20px 0;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.management #manageSummary{display:none}
+.management #projectHeaderTools{min-width:0;flex:1;justify-content:flex-end;align-items:center}
+.management[data-tab="inbox"] .manage-list-tools{padding-top:0}
+.management[data-tab="about"] .manage-split{border:0;border-radius:0;box-shadow:none}
+.management[data-tab="about"] .manage-split>.manage-list{display:flex!important;flex:0 0 auto}
+.management[data-tab="about"] .manage-detail{display:flex!important;padding:0;overflow:hidden;min-height:0}
+#aboutEditor{display:flex;flex-direction:column;width:100%;height:100%;min-height:0;gap:12px;margin:0}
+.about-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;align-items:start;align-content:start;overflow:auto;min-height:0;flex:1;padding:1px 2px 8px}
+.about-entry-card{border:1px solid #e4e4e4;border-radius:6px;background:#fff;min-width:0}
+.about-entry-card>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;list-style:none;cursor:pointer;padding:16px;min-height:48px;box-sizing:border-box}
+.about-entry-card>summary::-webkit-details-marker{display:none}
+.about-entry-card>summary strong{font-size:14px;font-weight:600;color:#262626}
+.about-entry-card>summary svg{flex:none;color:#777}
+.about-entry-card[open]>summary svg{transform:rotate(90deg)}
+.about-entry-card>summary:focus-visible{outline:2px solid #737373;outline-offset:-3px;border-radius:6px}
+.about-card-body{padding:16px;border-top:1px solid #ededed}
+#aboutEditor .field{margin-bottom:14px}
+#aboutEditor .field input,#aboutEditor .field textarea,#aboutEditor .field select{font-size:13px;padding:9px 10px;border-radius:6px}
+#aboutEditor .field label{font-size:12px}
+.about-save-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0 0;border-top:1px solid #ededed;flex:none}
+.about-save-footer>p{font-size:12px;margin:0;color:#777}
+.about-save-footer>p:empty{display:none}
+.about-save-footer .manage-editor-actions{display:flex;gap:8px;justify-content:flex-end;margin:0 0 0 auto;padding:0;border:0}
+.about-save-footer .manage-editor-actions button{font-size:13px;height:32px;padding:0 12px;border-radius:6px}
+@media(max-width:760px){
+ .management .management-main{padding:0 16px 16px}
+ .management .manage-header{height:72px;min-height:72px;padding:16px 0}
+ .management[data-tab="inbox"] .manage-list-tools{padding:0 12px}
+ .about-cards-grid{grid-template-columns:minmax(0,1fr)}
+ .about-save-footer{flex-wrap:wrap}
+}
+
+.management[data-tab="about"] .manage-list-tools{display:flex;align-items:center;gap:28px;padding:0 4px;border-bottom:1px solid #ededed;overflow:auto}
+.management[data-tab="about"] [data-about-section]{display:block;min-height:54px;width:auto;flex:none;padding:16px 0;border:0;border-bottom:2px solid transparent;border-radius:0;background:none}
+.management[data-tab="about"] [data-about-section].selected{border-bottom-color:#404040}
+.management[data-tab="about"] [data-about-section] .manage-row-text strong{font-size:13px;color:#858b97}
+.management[data-tab="about"] [data-about-section].selected strong{color:#262626}
+.about-form-scroll{min-height:0;flex:1;overflow:auto;padding:20px 2px 12px}
+.about-form-scroll>.field,.about-form-scroll>.pair{max-width:700px}
+.about-panel-title{font-size:17px;font-weight:600;margin:0 0 18px}
+.about-entry-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;align-items:start;margin-bottom:16px}
+.about-entry-actions{margin-bottom:12px}
+.manage-heading-refresh{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;min-height:32px;padding:0;border:0;border-radius:6px;background:transparent;color:#262626}
+.manage-heading-refresh:hover:not(:disabled){background:#f3f3f3}
+.manage-heading-refresh:disabled{opacity:.4}
+.manage-heading-refresh svg{display:block}
+.pm-inbox-filters{padding-top:14px}
+@media(max-width:760px){
+ .management[data-tab="about"] .manage-list-tools{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;padding:0 4px;overflow:visible}
+ .management[data-tab="about"] [data-about-section]{grid-column:auto;width:100%;min-width:0;min-height:44px;padding:12px 0;text-align:center}
+ .management[data-tab="about"] [data-about-section] .manage-row-text{align-items:center}
+ .management[data-tab="about"] [data-about-section] .manage-row-text strong{font-size:12px;white-space:nowrap}
+ .about-entry-grid{grid-template-columns:minmax(0,1fr)}
+}
+
+/* About configuration follows normal document scrolling. */
+.management[data-tab="about"]{height:auto;min-height:100dvh;overflow:visible}
+.management[data-tab="about"] .management-main{flex:none;overflow:visible}
+.management[data-tab="about"] .manage-split{flex:none;overflow:visible}
+.management[data-tab="about"] .manage-detail{flex:none;overflow:visible}
+.management[data-tab="about"] #aboutEditor{height:auto;min-height:0}
+.management[data-tab="about"] .about-form-scroll{flex:none;overflow:visible}
