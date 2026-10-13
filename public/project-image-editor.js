@@ -16,7 +16,7 @@ export function createProjectImageEditor({root,project,esc,glyph,onChange}){
   $('#projectImageFile').onchange=event=>{release();file=event.target.files[0]||null;remove=false;if(file){previewUrl=URL.createObjectURL(file);$('#projectImagePreview').innerHTML=`<img src="${previewUrl}" alt="待保存的项目图片" width="48" height="48"/>`;$('#projectImageStatus').textContent='保存时自动处理图片';}onChange();};
   $('#projectImageSource').oninput=()=>{remove=false;force=false;onChange();};
   $('#refreshProjectImage').onclick=()=>{force=true;remove=false;$('#projectImageStatus').textContent='保存时重新获取图片';onChange();};
-  $('#removeProjectImage').onclick=()=>{release();remove=true;file=null;force=false;$('#projectImageFile').value='';$('#projectImageSource').value='';$('#projectImagePreview').innerHTML=glyph({...project,image_url:''});$('#projectImageStatus').textContent='保存后恢复默认图片';onChange();};
+  $('#removeProjectImage').onclick=()=>{release();remove=true;file=null;force=false;$('#projectImageFile').value='';$('#projectImageSource').value='';$('#projectImagePreview').innerHTML=glyph({...project,image_url:project.image_path||''});$('#projectImageStatus').textContent='保存后恢复默认图片';onChange();};
  }
  async function prepare(){
   const version=project.image_key||'',data={image_action:'keep',image_version:version};

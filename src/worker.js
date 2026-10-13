@@ -1,3 +1,4 @@
+import { categories, projectRows, catalogResponse, saveCategory, deleteCategory, projectFields, projectOrder } from './project-catalog.js';
 import { withImage, fetchImageSource, saveProject, serveProjectImage } from './project-images.js';
 import { readAbout, normalizeAbout, publicAbout } from './about-settings.js';
 const json = (data, status = 200, headers = {}) => new Response(JSON.stringify(data), {status, headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff',...headers}});
@@ -34,10 +35,11 @@ async function getTicket(env,token){if(!/^[a-f0-9]{64}$/.test(token||''))return 
 async function route(request,env){const url=new URL(request.url), path=url.pathname,method=request.method;
  if(!path.startsWith('/api/'))return env.ASSETS.fetch(request);
  if(['GET','HEAD'].includes(method)&&path.startsWith('/api/project-images/'))return serveProjectImage(request,env);
+ if(method==='GET'&&path==='/api/catalog')return catalogResponse(request,env);
  if(method==='GET'&&path==='/api/about'){const data=await readAbout(env);return json({personal:publicAbout(data.personal)});}
  if(method==='GET'&&path==='/api/config')return json({turnstileSiteKey:env.TURNSTILE_REQUIRED==='true'?(env.TURNSTILE_SITE_KEY||''):''});
- if(method==='GET'&&path==='/api/projects'){const rows=(await env.DB.prepare('SELECT slug,name,description,official_url,color,icon,image_key FROM projects WHERE visible=1 AND enabled=1 ORDER BY created_at').all()).results;return json({projects:rows.map(withImage)});}
- if(method==='GET'&&/^\/api\/projects\/[a-z0-9-]+$/.test(path)){const slug=path.split('/')[3];const p=await env.DB.prepare('SELECT slug,name,description,official_url,color,icon,image_key FROM projects WHERE slug=? AND enabled=1').bind(slug).first();return p?json({project:withImage(p)}):err(404,'项目不存在或已关闭');}
+ if(method==='GET'&&path==='/api/projects'){const [projects,groups]=await Promise.all([projectRows(env,'p.visible=1 AND p.enabled=1'),categories(env)]);return json({projects,categories:groups});}
+ if(method==='GET'&&/^\/api\/projects\/[a-z0-9-]+$/.test(path)){const slug=path.split('/')[3];const p=await env.DB.prepare(`SELECT ${projectFields},COALESCE(c.name,'其他项目') category_name FROM projects p LEFT JOIN project_categories c ON c.id=p.category WHERE p.slug=? AND p.enabled=1`).bind(slug).first();return p?json({project:withImage(p)}):err(404,'项目不存在或已关闭');}
  if(method==='POST'&&path==='/api/admin/login'){
   if(!await rate(env,request,'admin-login',8,900))return err(429,'尝试次数过多，请稍后再试');
   const credentials=await adminCredentials(env);if(!env.SESSION_SECRET||(!env.ADMIN_PASSWORD&&!credentials?.password_hash))return err(503,'管理员尚未配置');
@@ -90,7 +92,10 @@ async function route(request,env){const url=new URL(request.url), path=url.pathn
   if(!await rate(env,request,'project-image',30,3600))return err(429,'图片操作过于频繁，请稍后再试');
   const body=await request.json().catch(()=>({}));try{const image=await fetchImageSource(body.url);return new Response(image.bytes,{headers:{'content-type':image.type,'cache-control':'no-store','x-content-type-options':'nosniff','content-security-policy':"default-src 'none'; sandbox"}});}catch(e){return err(400,e.name==='TimeoutError'?'图片下载超时，请换个地址重试':e.message);}
  }
- if(method==='GET'&&path==='/api/admin/projects'){const rows=(await env.DB.prepare('SELECT * FROM projects ORDER BY created_at').all()).results;return json({projects:rows.map(p=>({...p,image_url:withImage(p).image_url}))});}
+ if(method==='GET'&&path==='/api/admin/categories')return json({categories:await categories(env)});
+ const categoryMatch=path.match(/^\/api\/admin\/categories\/([a-z0-9-]+)$/);
+ if(method==='POST'&&path==='/api/admin/categories'||['PATCH','DELETE'].includes(method)&&categoryMatch){const result=method==='DELETE'?await deleteCategory(request,env,categoryMatch[1]):await saveCategory(request,env,categoryMatch?.[1]??null);return result.error?err(result.status,result.error):json(result);}
+ if(method==='GET'&&path==='/api/admin/projects'){const rows=(await env.DB.prepare(`SELECT p.*,COALESCE(c.name,'其他项目') category_name FROM projects p LEFT JOIN project_categories c ON c.id=p.category ORDER BY ${projectOrder}`).all()).results;return json({projects:rows.map(p=>({...p,image_url:withImage(p).image_url}))});}
  const projectMatch=path.match(/^\/api\/admin\/projects\/([a-z0-9-]+)$/);
  if(method==='POST'&&path==='/api/admin/projects'||method==='PATCH'&&projectMatch){const result=await saveProject(request,env,projectMatch?.[1]??null);return result.error?err(result.status,result.error):json(result,method==='POST'?201:200);}
  if(method==='GET'&&path==='/api/admin/tickets'){const status=clean(url.searchParams.get('status'),20),project=clean(url.searchParams.get('project'),50),q=clean(url.searchParams.get('q'),100);const rows=(await env.DB.prepare(`SELECT t.id,t.number,t.kind,t.title,t.status,t.created_at,t.updated_at,p.name project_name,p.slug project_slug FROM tickets t JOIN projects p ON p.id=t.project_id WHERE (?='' OR t.status=?) AND (?='' OR p.slug=?) AND (?='' OR t.title LIKE ? OR t.number LIKE ?) ORDER BY t.updated_at DESC LIMIT 200`).bind(status,status,project,project,q,'%'+q+'%','%'+q+'%').all()).results;return json({tickets:rows});}

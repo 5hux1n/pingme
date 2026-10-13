@@ -2,7 +2,7 @@ const MAX_SOURCE=5*1024*1024;
 const MAX_OUTPUT=128*1024;
 const keyPattern=/^project-icons\/[a-f0-9-]{36}\.(webp|png)$/;
 export const imageUrl=key=>keyPattern.test(key||'')?'/api/project-images/'+key.slice('project-icons/'.length):'';
-export const withImage=project=>{const {image_key,...data}=project;return {...data,image_url:imageUrl(image_key)};};
+export const withImage=project=>{const {image_key,image_source,image_path,...data}=project;return {...data,image_url:imageUrl(image_key)||(/^\/projects\/[a-z0-9.-]+\.(?:webp|svg|png)$/.test(image_path||'')?image_path:'')};};
 export function validImageSource(value){
  try{const u=new URL(value);const h=u.hostname.toLowerCase().replace(/^\[|\]$/g,'');return ['http:','https:'].includes(u.protocol)&&!u.username&&!u.password&&(!u.port||['80','443'].includes(u.port))&&h.includes('.')&&!h.endsWith('.local')&&!h.endsWith('.internal')&&!h.endsWith('.localhost')&&!privateAddress(h)&&h!=='localhost';}catch{return false;}
 }
@@ -63,8 +63,11 @@ export async function saveProject(request,env,slug=null){
  if(official){try{const u=new URL(official);if(!['http:','https:'].includes(u.protocol)||u.username||u.password)throw Error();}catch{return {error:'官网地址必须是有效的 HTTP 或 HTTPS 链接',status:400};}}
  const creating=slug===null;slug=creating?String(body.slug??'').trim().toLowerCase():slug;
  if(!/^[a-z0-9-]{2,50}$/.test(slug))return {error:'项目路径不合法',status:400};
- const existing=await env.DB.prepare('SELECT id,image_key,image_source FROM projects WHERE slug=?').bind(slug).first();
+ const existing=await env.DB.prepare('SELECT id,image_key,image_source,category,sort_order,homepage_visible FROM projects WHERE slug=?').bind(slug).first();
  if(creating&&existing)return {error:'项目路径已存在',status:409};if(!creating&&!existing)return {error:'项目不存在',status:404};
+ const category=String(body.category??existing?.category??'other').trim(),sortOrder=Number(body.sort_order??existing?.sort_order??0),homepageVisible=body.homepage_visible===undefined?(existing?.homepage_visible??1):body.homepage_visible?1:0;
+ if(!Number.isSafeInteger(sortOrder)||sortOrder<0||sortOrder>1000000)return {error:'排序需为 0–1000000 的整数',status:400};
+ if(!await env.DB.prepare('SELECT id FROM project_categories WHERE id=?').bind(category).first())return {error:'请选择有效的项目分类',status:400};
  const action=body.image_action||'keep';if(!['keep','replace','remove'].includes(action))return {error:'图片操作不正确',status:400};
  if(!creating&&body.image_version!==undefined&&body.image_version!==(existing.image_key||''))return {error:'项目图片已被其他页面修改，请重新加载项目',status:409};
  if(action==='replace'&&!image)return {error:'请选择处理后的图片',status:400};
@@ -73,8 +76,8 @@ export async function saveProject(request,env,slug=null){
  if(action==='replace'){newKey='project-icons/'+crypto.randomUUID()+'.'+image.ext;await env.FILES.put(newKey,image.bytes,{httpMetadata:{contentType:image.type,cacheControl:'public, max-age=31536000, immutable'}});key=newKey;sourceUrl=source;}
  if(action==='remove'){key='';sourceUrl='';}
  try{
-  if(creating)await env.DB.prepare('INSERT INTO projects(id,slug,name,description,official_url,visible,enabled,image_key,image_source) VALUES(?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(),slug,name,description,official||'',body.visible?1:0,body.enabled?1:0,key,sourceUrl).run();
-  else {const result=await env.DB.prepare('UPDATE projects SET name=?,description=?,official_url=COALESCE(?,official_url),visible=?,enabled=?,image_key=?,image_source=? WHERE slug=? AND image_key=?').bind(name,description,official,body.visible?1:0,body.enabled?1:0,key,sourceUrl,slug,existing.image_key||'').run();if((result.meta?.changes??result.changes)===0){if(newKey)await env.FILES.delete(newKey);return {error:'项目已被其他页面修改，请重新加载后保存',status:409};}}
+  if(creating)await env.DB.prepare('INSERT INTO projects(id,slug,name,description,official_url,visible,enabled,image_key,image_source,category,sort_order,homepage_visible) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').bind(crypto.randomUUID(),slug,name,description,official||'',body.visible?1:0,body.enabled?1:0,key,sourceUrl,category,sortOrder,homepageVisible).run();
+  else {const result=await env.DB.prepare('UPDATE projects SET name=?,description=?,official_url=COALESCE(?,official_url),visible=?,enabled=?,image_key=?,image_source=?,category=?,sort_order=?,homepage_visible=? WHERE slug=? AND image_key=?').bind(name,description,official,body.visible?1:0,body.enabled?1:0,key,sourceUrl,category,sortOrder,homepageVisible,slug,existing.image_key||'').run();if((result.meta?.changes??result.changes)===0){if(newKey)await env.FILES.delete(newKey);return {error:'项目已被其他页面修改，请重新加载后保存',status:409};}}
  }catch(e){if(newKey)await env.FILES.delete(newKey);throw e;}
  if(existing?.image_key&&existing.image_key!==key)await env.FILES.delete(existing.image_key).catch(e=>console.error('Old project image cleanup failed',e));
  return {ok:true,slug,image_url:imageUrl(key)};
