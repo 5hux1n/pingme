@@ -21,7 +21,7 @@ export async function fetchImageSource(value){
  const signal=AbortSignal.timeout(15000);let url=value;
  for(let i=0;i<5;i++){
   if(!validImageSource(url))throw Error('图片跳转地址不可用');await checkHost(new URL(url).hostname,signal);
-  const response=await fetch(url,{redirect:'manual',signal,headers:{accept:'image/png,image/jpeg,image/webp,image/gif,image/svg+xml', 'user-agent':'PingMe image importer'}});
+  const response=await fetch(url,{redirect:'manual',cache:'no-store',signal,headers:{'cache-control':'no-cache',accept:'image/png,image/jpeg,image/webp,image/gif,image/svg+xml', 'user-agent':'PingMe image importer'}});
   if(response.status>=300&&response.status<400){const location=response.headers.get('location');await response.body?.cancel();if(!location)throw Error('图片地址跳转失败');url=new URL(location,url).href;continue;}
   if(!response.ok){await response.body?.cancel();throw Error('图片下载失败（'+response.status+'）');}
   const type=(response.headers.get('content-type')||'').split(';')[0].trim().toLowerCase();
