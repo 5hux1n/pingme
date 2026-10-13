@@ -1,4 +1,4 @@
-import { createAdmin } from './admin.js?v=20261012-about-editor';
+import { createAdmin } from './admin.js?v=20261013-admin-workspace';
 import { projectCatalog, projectCategories } from './project-catalog.js?v=wordmark-feedback';
 const root=document.getElementById('app');
 const state={projects:[],selected:null,adminTab:'inbox',adminTickets:[],adminProjects:[],adminTicket:null,filterStatus:'',filterProject:'',search:'',config:{}};
@@ -16,7 +16,7 @@ async function mountTurnstile(host){
  if(!turnstileLoader)turnstileLoader=new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';script.async=true;script.onload=resolve;script.onerror=()=>{script.remove();turnstileLoader=null;reject(new Error('人机验证加载失败，请刷新页面重试。'))};document.head.append(script);});
  try{await turnstileLoader;if(!host.isConnected)return;turnstileWidget=window.turnstile.render(host,{sitekey:state.config.turnstileSiteKey,size:'flexible',theme:'light'});}catch(e){if(host.isConnected)host.textContent=e.message;}
 }
-function layout(html){if(turnstileWidget!==null&&window.turnstile){window.turnstile.remove(turnstileWidget);turnstileWidget=null;}root.innerHTML=nav()+html;root.querySelectorAll('[data-link]').forEach(a=>a.onclick=e=>{e.preventDefault();go(new URL(a.href).pathname)});}
+function layout(html){if(turnstileWidget!==null&&window.turnstile){window.turnstile.remove(turnstileWidget);turnstileWidget=null;}root.innerHTML=(html.includes('id="management"')?'':nav())+html;root.querySelectorAll('[data-link]').forEach(a=>a.onclick=e=>{e.preventDefault();go(new URL(a.href).pathname)});}
 
 const glyph=p=>projectCatalog[p.slug]?.image?`<img class="glyph project-icon" src="${esc(projectCatalog[p.slug].image)}" alt="" width="44" height="44"/>`:`<span class="glyph" style="background:var(--primary)">${esc(p.name?.slice(0,1)||'P')}</span>`;
 const projectCard=p=>`<button type="button" class="project-entry project" data-project="${esc(p.slug)}" aria-label="向 ${esc(p.name)} 提交反馈">${glyph(p)}<span><span class="projectname">${esc(p.name)}</span>${p.description?`<span class="projectdesc" style="display:block">${esc(p.description)}</span>`:''}</span><span class="arrow" aria-hidden="true">→</span></button>`;
@@ -97,5 +97,5 @@ async function publicDetail(token){layout(`<main class="shell detail fade"><butt
 const admin = createAdmin({root,state,api,jsonOpt,esc,layout,glyph,projectCatalog,projectCategories,detailMarkup,statuses});
 const adminPage=()=>admin.page();
 async function render(){const path=decodeURIComponent(location.pathname);if(path==='/admin'||path.startsWith('/admin/'))return adminPage();if(path==='/about')return about();if(path.startsWith('/t/'))return publicDetail(path.slice(3));if(path==='/'||path==='/index.html')return home();if(/^\/[a-z0-9-]+$/.test(path))return formPage(path.slice(1));layout('<main class="shell center">页面不存在。 <a href="/" data-link>返回首页</a></main>');}
-async function init(){try{const [p,c]=await Promise.all([api('/projects'),api('/config')]);state.projects=p.projects;state.config=c;}catch{state.projects=[];}render();}
+async function init(){if(location.pathname==='/admin'||location.pathname.startsWith('/admin/')){render();return;}try{const [p,c]=await Promise.all([api('/projects'),api('/config')]);state.projects=p.projects;state.config=c;}catch{state.projects=[];}render();}
 init();
