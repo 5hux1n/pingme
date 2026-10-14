@@ -33,7 +33,7 @@ function Projects({state,api,setDirty,onRefresh,controller}){
  const [rows,setRows]=useState(state.adminProjects),[categories,setCategories]=useState(state.categories),[query,setQuery]=useState(''),[category,setCategory]=useState(),[status,setStatus]=useState(),[page,setPage]=useState(1),[pageSize,setPageSize]=useState(20),[editor,setEditor]=useState(null),[categoryOpen,setCategoryOpen]=useState(false),[pending,setPending]=useState(new Set()),[loadError,setLoadError]=useState('');
  const locks=useRef(new Set()),editorDirty=useRef(false),refreshRevision=useRef(0);
  useEffect(()=>()=>setDirty(false),[]);
- useEffect(()=>{const main=document.getElementById('management');main?.classList.toggle('project-page-flow',desktop&&!editor);return ()=>main?.classList.remove('project-page-flow');},[desktop,editor]);
+ useEffect(()=>{const main=document.getElementById('management');main?.classList.toggle('project-page-flow',!desktop||!editor);return ()=>main?.classList.remove('project-page-flow');},[desktop,editor]);
  const dirty=value=>{editorDirty.current=value;setDirty(value);};
  const lock=(id,on)=>{on?locks.current.add(id):locks.current.delete(id);controller.busy=locks.current.size>0;setPending(new Set(locks.current));};
  async function refresh(){const revision=++refreshRevision.current;const [p,c,pub]=await Promise.all([api('/admin/projects'),api('/admin/categories'),api('/projects')]);if(revision!==refreshRevision.current)return p.projects;state.adminProjects=p.projects;state.categories=c.categories;state.projects=pub.projects;setRows(p.projects);setCategories(c.categories);onRefresh();return p.projects;}

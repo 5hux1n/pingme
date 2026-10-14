@@ -1,15 +1,15 @@
-import { createAboutEditor } from './admin-about.js?v=20261014-admin-loading';
+import { createAboutEditor } from './admin-about.js?v=20261014-mobile-page-scroll';
 export function createAdmin({root,state,api,jsonOpt,esc,layout,glyph,detailMarkup,statuses}) {
  const $=selector=>root.querySelector(selector);
  const PAGE_SIZE=20;
  let searchTimer,ticketController,projectWorkspace,projectStyles,inboxWorkspace,projectModule;
  const ticketCache=new Map();
- function loadComponents(){if(!projectModule)projectModule=Promise.all([import('./admin-projects.js?v=20261014-admin-loading'),loadProjectStyles()]).then(([module])=>module).catch(error=>{projectModule=null;throw error;});return projectModule;}
+ function loadComponents(){if(!projectModule)projectModule=Promise.all([import('./admin-projects.js?v=20261014-mobile-page-scroll'),loadProjectStyles()]).then(([module])=>module).catch(error=>{projectModule=null;throw error;});return projectModule;}
  function prime(snapshot){if(!snapshot)return;state.adminProjects=snapshot.projects;state.categories=snapshot.categories;view.projectsLoaded=true;ticketCache.set('',snapshot.tickets);view.ticketsLoadedAt=Date.now();aboutEditor.prime(snapshot.about);}
  function clearSession(){view.request++;view.ticketRequest++;view.detailRequest++;ticketController?.abort();clearTimeout(searchTimer);state.filterStatus='';state.filterProject='';state.search='';view.projectsLoaded=false;state.adminProjects=[];state.adminTickets=[];ticketCache.clear();aboutEditor.clear();}
  function ticketKey(){return new URLSearchParams({status:state.filterStatus,project:state.filterProject,q:state.search}).toString();}
  function cachedTickets(){return ticketCache.get(ticketKey())??(!state.filterStatus&&!state.filterProject&&!state.search?ticketCache.get(''):undefined);}
- function loadProjectStyles(){if(!projectStyles)projectStyles=new Promise((resolve,reject)=>{const link=document.createElement('link');link.rel='stylesheet';link.href='/admin-projects.css?v=20261014-admin-loading';link.onload=resolve;link.onerror=()=>{link.remove();projectStyles=null;reject(Error('样式加载失败，请刷新重试'));};document.head.append(link);});return projectStyles;}
+ function loadProjectStyles(){if(!projectStyles)projectStyles=new Promise((resolve,reject)=>{const link=document.createElement('link');link.rel='stylesheet';link.href='/admin-projects.css?v=20261014-mobile-page-scroll';link.onload=resolve;link.onerror=()=>{link.remove();projectStyles=null;reject(Error('样式加载失败，请刷新重试'));};document.head.append(link);});return projectStyles;}
  const icon=name=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${({inbox:'<path d="M4 4h16v16H4z"/><path d="M4 14h5l2 3h2l2-3h5"/>',projects:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',about:'<circle cx="12" cy="8" r="4"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/>',key:'<circle cx="8" cy="9" r="5"/><path d="m12 13 8 8m-4-4 3-3m-6 0 3-3"/>',logout:'<path d="M10 4H4v16h6m5-13 5 5-5 5m-6-5h11"/>',arrow:'<path d="m9 5 7 7-7 7"/>',search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/>'})[name]||''}</svg>`;
  const view={ticketPage:1,dirty:false,request:0,ticketRequest:0,detailRequest:0,projectsLoaded:false,ticketsLoadedAt:0,listScroll:0};
  const empty=(title,text)=>`<div class="manage-empty"><h2>${esc(title)}</h2><p>${esc(text)}</p></div>`;

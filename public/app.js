@@ -1,4 +1,4 @@
-import { createAdmin } from './admin.js?v=20261014-admin-loading';
+import { createAdmin } from './admin.js?v=20261014-mobile-page-scroll';
 const root=document.getElementById('app');
 const state={projects:[],categories:[],selected:null,adminTab:'inbox',adminTickets:[],adminProjects:[],adminTicket:null,filterStatus:'',filterProject:'',search:'',config:{}};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
