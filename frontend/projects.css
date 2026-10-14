@@ -154,10 +154,12 @@
 .management.project-page-flow .manage-split.project-workspace{flex:none;overflow:visible}
 .project-page-flow #projectWorkspace,.project-page-flow #projectWorkspace>.pm-ant-app,.project-page-flow .pm-projects{height:auto;min-height:0}
 .project-page-flow .pm-project-cards-region{flex:none;overflow:visible}
+@media(min-width:768px){
 .project-page-flow .pm-project-card .pm-ant-collapse-header{height:120px;box-sizing:border-box}
 .project-page-flow .pm-card-heading p{height:19.2px;min-height:19.2px;-webkit-line-clamp:1}
 .project-page-flow .pm-card-meta{height:18px;min-height:18px;margin-top:6px;flex-wrap:nowrap}
 .project-page-flow .pm-card-meta:empty{display:flex}
+}
 
 .pm-card-heading p{margin-top:7px}
 .pm-card-meta{margin-top:6px;gap:6px}
@@ -165,3 +167,9 @@
 .pm-status-tag.is-on{background:#eef6f1;color:#54816a}
 .pm-status-tag.is-hidden{background:#f2f3f5;color:#858b94}
 .pm-status-tag.is-closed{background:#fbf3e8;color:#a4865e}
+
+@media(max-width:767px){
+.project-page-flow .pm-editor,.project-page-flow .pm-edit-form{height:auto;min-height:0;flex:none}
+.project-page-flow .pm-form-body{flex:none;overflow:visible}
+.project-page-flow .pm-project-cards-region{padding-bottom:8px}
+}
