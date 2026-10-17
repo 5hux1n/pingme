@@ -9,7 +9,7 @@
 - 每条反馈最多 5 个附件，每个 10MB；访客可以回复和补充附件。
 - 后台收件箱支持搜索、项目与状态筛选、分页、状态保存、公开回复和内部备注。
 - 项目管理支持官网、分类、排序、主页展示、反馈展示和是否接收反馈。
-- 图片可上传或填写直链，保存时自动处理成最长边 144px 的 WebP，存入本站 R2；外链变化或主动更新时重新获取，替换后清理旧对象。
+- 图片可上传或填写直链，保存时自动处理成最长边 144px 的 WebP（不支持编码时使用 PNG），存入本站 R2；外链变化或主动更新时重新获取，替换后清理旧对象。
 - 分类维护及个人资料、联系方式、社交账号、个人站点、支持开发配置。
 - 新反馈通过企业微信应用发送 text 通知，后台显示发送回执，失败可手动重试。
 - 桌面和手机使用单一主内容区及正常网页滚动。原生 HTML/CSS/JavaScript，不依赖 React、Ant Design 或运行时组件构建。
@@ -39,7 +39,7 @@ npm run deploy
 
 ADMIN_PASSWORD 为初始非空密码，SESSION_SECRET 为独立随机长字符串。后台修改密码后以 D1 哈希为准，所有旧会话失效。不要把 `.dev.vars`、私密部署配置、密码或企业微信配置提交到仓库。
 
-已有部署只执行缺失的迁移，不重新导入 schema.sql 覆盖业务数据。本次通知功能先执行 `migrations/0007_feedback_notifications.sql`。之前的目录升级依次执行 `20261013-unified-catalog.sql`、部署对应 Worker、再执行 `20261013-remove-legacy-project-fields.sql`；关于页迁移为 `20261012-about-settings.sql`。含 ALTER TABLE 的迁移不能重复执行。
+已有部署只执行缺失的迁移，不重新导入 schema.sql 覆盖业务数据。本次通知功能先执行 `migrations/20261018-feedback-notifications.sql`。之前的目录升级依次执行 `20261013-unified-catalog.sql`、部署对应 Worker、再执行 `20261013-remove-legacy-project-fields.sql`；关于页迁移为 `20261012-about-settings.sql`。含 ALTER TABLE 的迁移不能重复执行。
 
 ## 企业微信应用通知
 

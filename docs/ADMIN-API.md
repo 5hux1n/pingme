@@ -55,4 +55,4 @@ personal 包含 name、bio、avatar、homeUrl、homeLabel、feedbackLabel、cont
 
 Worker secrets：WECOM_CORP_ID、WECOM_SECRET、WECOM_AGENT_ID、WECOM_TO_USER；PUBLIC_SITE_URL 为公开站点地址。凭据只通过本机已授权的私密配置注入，不提交源码。消息使用 text，包含项目、编号、标题、内容摘要和后台详情地址；按 UTF-8 字节裁剪摘要，保留完整入口。通知不包含反馈访问 token、联系方式和附件内容。
 
-feedback_notifications 记录 pending/sending/sent/failed/unknown/disabled、回执 ID 及错误。只有企业微信明确拒绝过期令牌才自动换令牌重试；请求结果未知不盲目重复发送。未配置或发送失败不会导致反馈提交失败。发布前执行 migrations/0007_feedback_notifications.sql。
+feedback_notifications 记录 pending/sending/sent/failed/unknown/disabled、回执 ID 及错误。只有企业微信明确拒绝过期令牌才自动换令牌重试；请求结果未知不盲目重复发送。未配置或发送失败不会导致反馈提交失败。发布前执行 migrations/20261018-feedback-notifications.sql。
