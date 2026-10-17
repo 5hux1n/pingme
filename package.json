@@ -4,20 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npm run build:admin && wrangler dev",
-    "deploy": "npm run build:admin && wrangler deploy",
+    "dev": "npm run check && wrangler dev",
+    "deploy": "npm run check && wrangler deploy",
     "db:local": "wrangler d1 execute pingme-db --local --file=./schema.sql",
     "db:remote": "wrangler d1 execute pingme-db --remote --file=./schema.sql",
-    "build:admin": "node scripts/build-admin.mjs"
+    "check": "node scripts/check.mjs",
+    "test": "node --test tests/*.test.js"
   },
   "devDependencies": {
-    "esbuild": "0.28.2",
     "wrangler": "^4.41.0"
-  },
-  "dependencies": {
-    "antd": "6.6.6",
-    "react": "19.3.0",
-    "react-dom": "19.3.0"
   },
   "engines": {
     "node": ">=22.13.0"
