@@ -131,13 +131,25 @@ async function route(request,env,ctx){const url=new URL(request.url), path=url.p
   return json({tickets:rows.results,total:count.results[0].total,page,limit});
  }
  const adt=path.match(/^\/api\/admin\/tickets\/([a-f0-9-]{36})(?:\/(reply|notify))?$/);
- if(adt){const t=await env.DB.prepare('SELECT t.*,p.name project_name,p.slug project_slug FROM tickets t JOIN projects p ON p.id=t.project_id WHERE t.id=?').bind(adt[1]).first();if(!t)return err(404,'反馈不存在');if(method==='GET'&&!adt[2])return json({ticket:{...publicTicket(t),contact:t.contact},messages:await messages(env,t.id),attachments:await attachments(env,t.id),notification:await env.DB.prepare('SELECT status,error,updated_at FROM feedback_notifications WHERE ticket_id=?').bind(t.id).first()});
+ if(adt){const t=await env.DB.prepare('SELECT t.*,p.name project_name,p.slug project_slug FROM tickets t JOIN projects p ON p.id=t.project_id WHERE t.id=?').bind(adt[1]).first();if(!t)return err(404,'反馈不存在');if(method==='GET'&&!adt[2]){const [messageRows,fileRows,notification]=await env.DB.batch([
+  env.DB.prepare('SELECT id,role,body,created_at FROM messages WHERE ticket_id=? ORDER BY created_at,id').bind(t.id),
+  env.DB.prepare('SELECT id,name,mime,bytes,created_at FROM attachments WHERE ticket_id=? ORDER BY created_at').bind(t.id),
+  env.DB.prepare('SELECT status,error,updated_at FROM feedback_notifications WHERE ticket_id=?').bind(t.id)
+ ]);return json({ticket:{...publicTicket(t),contact:t.contact},messages:messageRows.results,attachments:fileRows.results,notification:notification.results[0]||null});}
  if(method==='POST'&&adt[2]==='notify'){if(!await rate(env,request,'notify',10,3600))return err(429,'推送过于频繁，请稍后再试');await notifyFeedback(env,{...t,project_name:t.project_name},url.origin);return json({ok:true,notification:await env.DB.prepare('SELECT status,error,updated_at FROM feedback_notifications WHERE ticket_id=?').bind(t.id).first()});}
- if(method==='PATCH'&&!adt[2]){const b=await request.json().catch(()=>({}));if(!['new','progress','resolved','closed'].includes(b.status))return err(400,'状态无效');await env.DB.prepare('UPDATE tickets SET status=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(b.status,t.id).run();const saved=await env.DB.prepare('SELECT status,updated_at FROM tickets WHERE id=?').bind(t.id).first();return json({ok:true,ticket:{...publicTicket(t),...saved,contact:t.contact}});}
- if(method==='POST'&&adt[2]==='reply'){const b=await request.json().catch(()=>({})),body=String(b.body??'').trim();if(!body)return err(400,'回复不能为空');const status=b.status??t.status;if(!['new','progress','resolved','closed'].includes(status))return err(400,'状态无效');await env.DB.batch([
-  env.DB.prepare('INSERT INTO messages(id,ticket_id,role,body) VALUES(?,?,?,?)').bind(uuid(),t.id,b.internal?'internal':'admin',body),
-  env.DB.prepare('UPDATE tickets SET status=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(status,t.id)
- ]);const saved=await env.DB.prepare('SELECT status,updated_at FROM tickets WHERE id=?').bind(t.id).first();return json({ok:true,ticket:{...publicTicket(t),...saved,contact:t.contact},messages:await messages(env,t.id)});}}
+ if(method==='PATCH'&&!adt[2]){const b=await request.json().catch(()=>({}));if(!['new','progress','resolved','closed'].includes(b.status))return err(400,'状态无效');const [,result]=await env.DB.batch([env.DB.prepare('UPDATE tickets SET status=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(b.status,t.id),env.DB.prepare('SELECT status,updated_at FROM tickets WHERE id=?').bind(t.id)]);const saved=result.results[0];return json({ok:true,ticket:{...publicTicket(t),...saved,contact:t.contact}});}
+ if(method==='POST'&&adt[2]==='reply'){
+  const b=await request.json().catch(()=>({})),body=String(b.body??'').trim();if(!body)return err(400,'回复不能为空');
+  if(b.status!==undefined&&!['new','progress','resolved','closed'].includes(b.status))return err(400,'状态无效');
+  const [,,saved,messageRows]=await env.DB.batch([
+   env.DB.prepare('INSERT INTO messages(id,ticket_id,role,body) VALUES(?,?,?,?)').bind(uuid(),t.id,b.internal?'internal':'admin',body),
+   env.DB.prepare('UPDATE tickets SET status=COALESCE(?,status),updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(b.status??null,t.id),
+   env.DB.prepare('SELECT status,updated_at FROM tickets WHERE id=?').bind(t.id),
+   env.DB.prepare('SELECT id,role,body,created_at FROM messages WHERE ticket_id=? ORDER BY created_at,id').bind(t.id)
+  ]);
+  return json({ok:true,ticket:{...publicTicket(t),...saved.results[0],contact:t.contact},messages:messageRows.results});
+ }}
+
 
  return err(404,'接口不存在');
 }
