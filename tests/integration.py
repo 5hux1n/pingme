@@ -53,7 +53,7 @@ for status in ('progress','resolved','closed','new'):
  assert call('/admin/tickets/'+id)['ticket']['status']==status
 call('/admin/tickets/'+id,'PATCH',{'status':'invalid'},400)
 call('/admin/tickets/'+id+'/reply','POST',{'body':'内部内容','internal':True})
-result=call('/admin/tickets/'+id+'/reply','POST',{'body':'开发者已收到反馈','internal':False,'status':'progress'});assert result['ticket']['status']=='progress'
+result=call('/admin/tickets/'+id+'/reply','POST',{'body':'开发者已收到反馈','internal':False,'status':'progress'});assert result['ticket']['status']=='progress';assert [m['body'] for m in result['messages']]==['内部内容','开发者已收到反馈']
 public=call(created['url'],anonymous=True);assert [m['body'] for m in public['messages']]==['开发者已收到反馈']
 attachment=public['attachments'][0]['id'];token=created['url'].split('/')[-1]
 call('/attachments/'+attachment,anonymous=True,expected=403)

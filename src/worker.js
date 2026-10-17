@@ -35,8 +35,8 @@ async function rate(env,request,label,max=12,ttl=3600){
  ]);
  return results[2].results[0].count<=max;
 }
-async function messages(env,id){return (await env.DB.prepare('SELECT id,role,body,created_at FROM messages WHERE ticket_id=? ORDER BY created_at,id').bind(id).all()).results;}
-async function attachments(env,id){return (await env.DB.prepare('SELECT id,name,mime,bytes,created_at FROM attachments WHERE ticket_id=? ORDER BY created_at,id').bind(id).all()).results;}
+async function messages(env,id){return (await env.DB.prepare('SELECT id,role,body,created_at FROM messages WHERE ticket_id=? ORDER BY created_at,rowid').bind(id).all()).results;}
+async function attachments(env,id){return (await env.DB.prepare('SELECT id,name,mime,bytes,created_at FROM attachments WHERE ticket_id=? ORDER BY created_at,rowid').bind(id).all()).results;}
 async function storeFiles(env,form,ticketId,messageId=null){const files=form.getAll('files').filter(f=>f instanceof File && f.size>0);if(files.length>5)throw new Error('最多上传 5 个附件');for(const file of files){if(file.size>10*1024*1024)throw new Error('单个附件不能超过 10MB');if(!allowedExt.has(fileExt(file.name))||!allowedTypes.has(file.type))throw new Error('不支持的附件格式：'+file.name);}
  for(const file of files){const id=uuid(), key=`${ticketId}/${id}`;await env.FILES.put(key,file.stream(),{httpMetadata:{contentType:'application/octet-stream'}});await env.DB.prepare('INSERT INTO attachments(id,ticket_id,message_id,name,mime,bytes,object_key) VALUES(?,?,?,?,?,?,?)').bind(id,ticketId,messageId,clean(file.name,150),file.type||'application/octet-stream',file.size,key).run();}}
 async function getTicket(env,token){if(!/^[a-f0-9]{64}$/.test(token||''))return null;return env.DB.prepare('SELECT t.*,p.name project_name,p.slug project_slug FROM tickets t JOIN projects p ON p.id=t.project_id WHERE t.access_hash=?').bind(await hash(token)).first();}
@@ -132,7 +132,7 @@ async function route(request,env,ctx){const url=new URL(request.url), path=url.p
  }
  const adt=path.match(/^\/api\/admin\/tickets\/([a-f0-9-]{36})(?:\/(reply|notify))?$/);
  if(adt){const t=await env.DB.prepare('SELECT t.*,p.name project_name,p.slug project_slug FROM tickets t JOIN projects p ON p.id=t.project_id WHERE t.id=?').bind(adt[1]).first();if(!t)return err(404,'反馈不存在');if(method==='GET'&&!adt[2]){const [messageRows,fileRows,notification]=await env.DB.batch([
-  env.DB.prepare('SELECT id,role,body,created_at FROM messages WHERE ticket_id=? ORDER BY created_at,id').bind(t.id),
+  env.DB.prepare('SELECT id,role,body,created_at FROM messages WHERE ticket_id=? ORDER BY created_at,rowid').bind(t.id),
   env.DB.prepare('SELECT id,name,mime,bytes,created_at FROM attachments WHERE ticket_id=? ORDER BY created_at').bind(t.id),
   env.DB.prepare('SELECT status,error,updated_at FROM feedback_notifications WHERE ticket_id=?').bind(t.id)
  ]);return json({ticket:{...publicTicket(t),contact:t.contact},messages:messageRows.results,attachments:fileRows.results,notification:notification.results[0]||null});}
@@ -145,7 +145,7 @@ async function route(request,env,ctx){const url=new URL(request.url), path=url.p
    env.DB.prepare('INSERT INTO messages(id,ticket_id,role,body) VALUES(?,?,?,?)').bind(uuid(),t.id,b.internal?'internal':'admin',body),
    env.DB.prepare('UPDATE tickets SET status=COALESCE(?,status),updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(b.status??null,t.id),
    env.DB.prepare('SELECT status,updated_at FROM tickets WHERE id=?').bind(t.id),
-   env.DB.prepare('SELECT id,role,body,created_at FROM messages WHERE ticket_id=? ORDER BY created_at,id').bind(t.id)
+   env.DB.prepare('SELECT id,role,body,created_at FROM messages WHERE ticket_id=? ORDER BY created_at,rowid').bind(t.id)
   ]);
   return json({ok:true,ticket:{...publicTicket(t),...saved.results[0],contact:t.contact},messages:messageRows.results});
  }}
