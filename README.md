@@ -5,9 +5,10 @@
 ## 功能
 
 - 公开项目目录、分类和搜索；每条反馈有独立私密查询链接。
-- 标题、描述任意非空，不设最短或最长字符数；不使用 CF 验证。保留提交限流。
+- 邮箱必填，描述任意非空，不设字数限制；可附截图、录屏和日志，不使用 CF 验证。保留提交限流。
 - 每条反馈最多 5 个附件，每个 10MB；访客可以回复和补充附件。
-- 后台收件箱支持搜索、项目与状态筛选、分页、状态保存、公开回复和内部备注。
+- 后台收件箱支持搜索、项目与状态筛选、分页；回复和状态一次保存，内部备注不外发。
+- 邮件确认提交、通知交流和状态变化；用户与管理员可直接回复邮件，归档到同一反馈。
 - 项目管理支持官网、分类、排序、主页展示、反馈展示和是否接收反馈。
 - 图片可上传或填写直链，保存时自动处理成最长边 144px 的 WebP（不支持编码时使用 PNG），存入本站 R2；外链变化或主动更新时重新获取，替换后清理旧对象。
 - 分类维护及个人资料、联系方式、社交账号、个人站点、支持开发配置。
@@ -39,7 +40,7 @@ npm run deploy
 
 ADMIN_PASSWORD 为初始非空密码，SESSION_SECRET 为独立随机长字符串。后台修改密码后以 D1 哈希为准，所有旧会话失效。不要把 `.dev.vars`、私密部署配置、密码或企业微信配置提交到仓库。
 
-已有部署只执行缺失的迁移，不重新导入 schema.sql 覆盖业务数据。本次通知功能先执行 `migrations/20261018-feedback-notifications.sql`。之前的目录升级依次执行 `20261013-unified-catalog.sql`、部署对应 Worker、再执行 `20261013-remove-legacy-project-fields.sql`；关于页迁移为 `20261012-about-settings.sql`。含 ALTER TABLE 的迁移不能重复执行。
+已有部署只执行缺失的迁移，不重新导入 schema.sql 覆盖业务数据。通知功能执行 `migrations/20261018-feedback-notifications.sql`，邮件交流执行 `migrations/20261018-mail-conversations.sql`。之前的目录升级依次执行 `20261013-unified-catalog.sql`、部署对应 Worker、再执行 `20261013-remove-legacy-project-fields.sql`；关于页迁移为 `20261012-about-settings.sql`。含 ALTER TABLE 的迁移不能重复执行。
 
 ## 企业微信应用通知
 
@@ -63,7 +64,7 @@ npm test
 
 ## 数据和权限
 
-- 反馈 token 仅保存 SHA-256 摘要。拥有私密链接的人可查看反馈及公开回复。
+- 反馈访问验证使用 SHA-256 摘要；邮件线程中的访问令牌以独立密钥加密保存。拥有私密链接的人可查看反馈及公开回复。
 - 内部备注和联系方式仅后台可见；附件只允许管理员或该反馈 token 下载。
 - 后台写入校验本站 Origin。图片导入拒绝私有地址和不安全跳转。
 - 密码使用 PBKDF2 哈希，会话使用 HttpOnly、Secure、SameSite Cookie，登录及写入端点保留频率限制。
@@ -81,3 +82,9 @@ npm test
 - `src/about-settings.js` 个人资料验证与存储
 - `src/wecom.js` 企业微信通知与回执
 - `schema.sql` 新部署初始化；`migrations/` 旧部署增量升级
+
+## 邮件配置
+
+在 Resend 验证发件域名并启用收信，按域名控制台提供的记录配置 DNS。将 RESEND_API_KEY、RESEND_WEBHOOK_SECRET、MAIL_FROM、MAIL_DOMAIN、MAIL_ADMIN_TO、MAIL_SIGNING_SECRET 设置为 Worker secrets。MAIL_SIGNING_SECRET 使用独立随机长字符串，后续部署保持稳定。
+
+创建指向 `/api/mail/webhook` 的 Resend webhook，订阅 email.received、email.delivered、email.bounced、email.complained、email.failed。保留每分钟 cron 以重试通知及处理来信。收到的回复须通过发件人邮箱及服务端域名认证检查；不能仅凭反馈编号归档。管理员首行可写 `状态：已解决`，将回复与状态合并处理。

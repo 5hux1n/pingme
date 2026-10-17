@@ -25,9 +25,11 @@ export async function notifyFeedback(env,ticket,origin){
  if(!(claim.meta?.changes??claim.changes))return;
  try{
   const target=new URL('/admin#inbox/'+ticket.id,env.PUBLIC_SITE_URL||origin).href;
-  const heading=`收到新反馈\n项目：${ticket.project_name}\n编号：${ticket.number}\n标题：${ticket.title}\n内容：${ticket.body}`;
+  const heading=`收到新反馈\n项目：${ticket.project_name}\n编号：${ticket.number}\n反馈摘要：${ticket.title}\n内容：${ticket.body}`;
   const content=limited(heading,Math.max(200,1900-encoder.encode(target).length))+'\n\n查看并处理：'+target;
   const msgid=await send(env,content);
   await env.DB.prepare("UPDATE feedback_notifications SET status='sent',message_id=?,error='',updated_at=CURRENT_TIMESTAMP WHERE ticket_id=?").bind(msgid,ticket.id).run();
  }catch(error){await env.DB.prepare('UPDATE feedback_notifications SET status=?,error=?,updated_at=CURRENT_TIMESTAMP WHERE ticket_id=?').bind(error.uncertain?'unknown':'failed',String(error.message).slice(0,300),ticket.id).run();console.error('Feedback notification failed:',error.message);}
 }
+
+export async function sendConversationNotice(env,ticket,event){if(!configured(env))throw Error('企业微信应用尚未配置');const target=new URL('/admin#inbox/'+ticket.id,env.PUBLIC_SITE_URL).href;return send(env,limited(`收到反馈补充\n项目：${ticket.project_name}\n编号：${ticket.number}\n反馈摘要：${ticket.title}\n内容：${event.body}`,1500)+`\n查看并处理：${target}\n记录：${event.id.slice(0,8)}`);}

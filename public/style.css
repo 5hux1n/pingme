@@ -221,3 +221,5 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
  .project-categories{grid-column:1;grid-row:2}
 }
 @media(prefers-reduced-motion:reduce){.search-morph,.search-input-label{transition:none!important}}
+
+.field .form-description-help{display:block;color:var(--muted);font-size:12px;line-height:1.8;margin:0 0 10px}.formbody .submitrow{justify-content:flex-end}

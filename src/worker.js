@@ -1,3 +1,5 @@
+import {validEmail,changeTicket,visitorEvent,eventStatement,jobStatements} from './ticket-events.js';
+import {threadStatement,mailWebhook,drainMail} from './mail.js';
 import { notifyFeedback } from './wecom.js';
 import { categories, projectRows, catalogResponse, saveCategory, deleteCategory, projectFields, projectOrder } from './project-catalog.js';
 import { withImage, fetchImageSource, saveProject, serveProjectImage } from './project-images.js';
@@ -36,7 +38,7 @@ async function rate(env,request,label,max=12,ttl=3600){
  return results[2].results[0].count<=max;
 }
 async function messages(env,id){return (await env.DB.prepare('SELECT id,role,body,created_at FROM messages WHERE ticket_id=? ORDER BY created_at,rowid').bind(id).all()).results;}
-async function attachments(env,id){return (await env.DB.prepare('SELECT id,name,mime,bytes,created_at FROM attachments WHERE ticket_id=? ORDER BY created_at,rowid').bind(id).all()).results;}
+async function attachments(env,id){return (await env.DB.prepare("SELECT a.id,a.name,a.mime,a.bytes,a.created_at,a.message_id,(m.role='internal') internal FROM attachments a LEFT JOIN messages m ON m.id=a.message_id WHERE a.ticket_id=? ORDER BY a.created_at,a.rowid").bind(id).all()).results;}
 async function storeFiles(env,form,ticketId,messageId=null){const files=form.getAll('files').filter(f=>f instanceof File && f.size>0);if(files.length>5)throw new Error('最多上传 5 个附件');for(const file of files){if(file.size>10*1024*1024)throw new Error('单个附件不能超过 10MB');if(!allowedExt.has(fileExt(file.name))||!allowedTypes.has(file.type))throw new Error('不支持的附件格式：'+file.name);}
  for(const file of files){const id=uuid(), key=`${ticketId}/${id}`;await env.FILES.put(key,file.stream(),{httpMetadata:{contentType:'application/octet-stream'}});await env.DB.prepare('INSERT INTO attachments(id,ticket_id,message_id,name,mime,bytes,object_key) VALUES(?,?,?,?,?,?,?)').bind(id,ticketId,messageId,clean(file.name,150),file.type||'application/octet-stream',file.size,key).run();}}
 async function getTicket(env,token){if(!/^[a-f0-9]{64}$/.test(token||''))return null;return env.DB.prepare('SELECT t.*,p.name project_name,p.slug project_slug FROM tickets t JOIN projects p ON p.id=t.project_id WHERE t.access_hash=?').bind(await hash(token)).first();}
@@ -52,7 +54,9 @@ async function adminSnapshot(env){
  const config=about.results[0];
  return {ticketTotal:total.results[0].total,projects:projects.results.map(p=>({...p,image_url:withImage(p).image_url})),categories:groups.results,tickets:tickets.results,about:{personal:config?JSON.parse(config.value):structuredClone(aboutDefaults),version:config?.version||0}};
 }
+function scheduleMail(env,ctx,ticketId=null){const task=drainMail(env,{ticketId}).catch(()=>console.error('邮件队列暂未处理完成，将由定时任务重试'));if(ctx?.waitUntil)ctx.waitUntil(task);else return task;}
 async function route(request,env,ctx){const url=new URL(request.url), path=url.pathname,method=request.method;
+ if(method==='POST'&&path==='/api/mail/webhook'){const response=await mailWebhook(request,env);if(response.ok)scheduleMail(env,ctx);return response;}
  if(!path.startsWith('/api/'))return env.ASSETS.fetch(request);
  if(['GET','HEAD'].includes(method)&&path.startsWith('/api/project-images/'))return serveProjectImage(request,env);
  if(method==='GET'&&path==='/api/catalog')return catalogResponse(request,env);
@@ -74,21 +78,38 @@ async function route(request,env,ctx){const url=new URL(request.url), path=url.p
   if(Number(request.headers.get('content-length')||0)>53*1024*1024)return err(413,'附件总大小超出限制');
   const form=await request.formData().catch(()=>null);if(!form)return err(400,'表单格式错误');
   const project=await env.DB.prepare('SELECT id,slug,name FROM projects WHERE slug=? AND enabled=1').bind(clean(form.get('project'),50)).first();if(!project)return err(404,'项目不存在');
-  const kind=clean(form.get('kind'),30),title=String(form.get('title')??'').trim(),body=String(form.get('body')??'').trim();if(!['bug','unavailable','update','suggestion','idea','question','other'].includes(kind)||!title||!body)return err(400,'请填写完整的反馈类型、标题和描述');
+  const body=String(form.get('body')??'').replace(/\r\n?/g,'\n').trim();if(!body)return err(400,'请填写反馈描述');
+  const kind='feedback',summary=Array.from(body.slice(0,240).replace(/\s+/g,' ')),title=summary.slice(0,80).join('')+(summary.length>80||body.length>240?'…':'');
+  const email=String(form.get('email')??'').trim().toLowerCase();if(!validEmail(email))return err(400,'请填写有效的邮箱地址，用于接收反馈回执和后续回复');
   const fs=form.getAll('files').filter(f=>f instanceof File&&f.size>0);if(fs.length>5||fs.some(f=>f.size>10*1024*1024||!allowedExt.has(fileExt(f.name))||!allowedTypes.has(f.type)))return err(400,'附件最多 5 个，每个不超过 10MB，仅允许常见图片、视频、日志、ZIP 和 PDF');
   const id=uuid(),token=randomToken(),number='PM-'+new Date().toISOString().slice(0,10).replaceAll('-','')+'-'+id.slice(0,6).toUpperCase();
-  await env.DB.prepare('INSERT INTO tickets(id,number,project_id,kind,title,body,app_version,platform,contact,access_hash) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(id,number,project.id,kind,title,body,clean(form.get('app_version'),80),clean(form.get('platform'),80),clean(form.get('contact'),200),await hash(token)).run();
-  try {await storeFiles(env,form,id);} catch(e){return err(500,'反馈已创建，但附件上传失败；请在反馈详情中补充附件');}
-  const notification=notifyFeedback(env,{id,number,project_name:project.name,title,body},url.origin).catch(error=>console.error('Notification processing failed:',error.message));if(ctx?.waitUntil)ctx.waitUntil(notification);else await notification;
-  return json({ok:true,number,url:`/t/${token}`},201);
+  const event={id:uuid(),ticket_id:id,kind:'created',body,status:'new',previous_status:'new',role:'visitor'};
+  await env.DB.batch([
+   env.DB.prepare('INSERT INTO tickets(id,number,project_id,kind,title,body,app_version,platform,contact,email,access_hash,last_event_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').bind(id,number,project.id,kind,title,body,'','','',email,await hash(token),event.id),
+   await threadStatement(env,id,token),eventStatement(env,event),...jobStatements(env,event.id,{visitor:true,admin:true,wecom:true,waitingFiles:true})
+  ]);
+  let warning='';try{await storeFiles(env,form,id);}catch{warning='反馈已保存，但部分附件上传失败，请在反馈详情中补充。';}
+  await env.DB.prepare("UPDATE notification_jobs SET status='pending',updated_at=CURRENT_TIMESTAMP WHERE event_id=? AND status='waiting_files'").bind(event.id).run();
+  scheduleMail(env,ctx,id);
+  return json({ok:true,number,url:`/t/${token}`,...(warning?{warning}:{})},201);
  }
  const publicMatch=path.match(/^\/api\/t\/([a-f0-9]{64})(?:\/(reply))?$/);
- if(publicMatch){const token=publicMatch[1],t=await getTicket(env,token);if(!t)return err(404,'反馈不存在');if(method==='GET'&&!publicMatch[2])return json({ticket:publicTicket(t),messages:(await messages(env,t.id)).filter(m=>m.role!=='internal'),attachments:await attachments(env,t.id)});
-  if(method==='POST'&&publicMatch[2]){if(t.status==='closed')return err(403,'该反馈已关闭');if(!await rate(env,request,'reply',15,3600))return err(429,'回复过于频繁');const form=await request.formData().catch(()=>null);if(!form)return err(400,'格式错误');const body=String(form.get('body')??'').trim();if(!body && !form.getAll('files').some(f=>f instanceof File&&f.size))return err(400,'请输入回复或添加附件');const fs=form.getAll('files').filter(f=>f instanceof File&&f.size>0);if(fs.length>5||fs.some(f=>f.size>10*1024*1024||!allowedExt.has(fileExt(f.name))||!allowedTypes.has(f.type)))return err(400,'附件不符合要求');const mid=uuid();await env.DB.prepare('INSERT INTO messages(id,ticket_id,role,body) VALUES(?,?,?,?)').bind(mid,t.id,'visitor',body).run();await storeFiles(env,form,t.id,mid);await env.DB.prepare('UPDATE tickets SET updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(t.id).run();return json({ok:true});}}
+ if(publicMatch){const token=publicMatch[1],t=await getTicket(env,token);if(!t)return err(404,'反馈不存在');if(method==='GET'&&!publicMatch[2])return json({ticket:publicTicket(t),messages:(await messages(env,t.id)).filter(m=>m.role!=='internal'),attachments:(await attachments(env,t.id)).filter(f=>!f.message_id||!f.internal)});
+  if(method==='POST'&&publicMatch[2]){if(t.status==='closed')return err(403,'该反馈已关闭');if(!await rate(env,request,'reply',15,3600))return err(429,'回复过于频繁');const form=await request.formData().catch(()=>null);if(!form)return err(400,'格式错误');const body=String(form.get('body')??'').trim();if(!body && !form.getAll('files').some(f=>f instanceof File&&f.size))return err(400,'请输入回复或添加附件');const fs=form.getAll('files').filter(f=>f instanceof File&&f.size>0);if(fs.length>5||fs.some(f=>f.size>10*1024*1024||!allowedExt.has(fileExt(f.name))||!allowedTypes.has(f.type)))return err(400,'附件不符合要求');const mid=uuid();await storeFiles(env,form,t.id,mid);await visitorEvent(env,t,body,{eventId:mid});scheduleMail(env,ctx,t.id);return json({ok:true});}}
  const attachmentMatch=path.match(/^\/api\/attachments\/([a-f0-9-]{36})$/);
- if(method==='GET'&&attachmentMatch){const file=await env.DB.prepare('SELECT * FROM attachments WHERE id=?').bind(attachmentMatch[1]).first();if(!file)return err(404,'文件不存在');const tok=url.searchParams.get('token');if(!await isAdmin(request,env)){const t=await getTicket(env,tok);if(!t||t.id!==file.ticket_id)return err(403,'无权访问');}const obj=await env.FILES.get(file.object_key);if(!obj)return err(404,'附件已丢失');const safeName=file.name.replace(/[\r\n"\\]/g,'_');return new Response(obj.body,{headers:{'content-type':'application/octet-stream','content-disposition':`attachment; filename="${safeName.replace(/[^\x20-\x7e]/g,'_')}"; filename*=UTF-8''${encodeURIComponent(file.name)}`,'x-content-type-options':'nosniff','cache-control':'private, no-store'}});}
+ if(method==='GET'&&attachmentMatch){const file=await env.DB.prepare('SELECT * FROM attachments WHERE id=?').bind(attachmentMatch[1]).first();if(!file)return err(404,'文件不存在');const tok=url.searchParams.get('token');if(!await isAdmin(request,env)){const t=await getTicket(env,tok);if(!t||t.id!==file.ticket_id)return err(403,'无权访问');if(file.message_id&&(await env.DB.prepare('SELECT role FROM messages WHERE id=?').bind(file.message_id).first())?.role==='internal')return err(403,'无权访问');}const obj=await env.FILES.get(file.object_key);if(!obj)return err(404,'附件已丢失');const safeName=file.name.replace(/[\r\n"\\]/g,'_');return new Response(obj.body,{headers:{'content-type':'application/octet-stream','content-disposition':`attachment; filename="${safeName.replace(/[^\x20-\x7e]/g,'_')}"; filename*=UTF-8''${encodeURIComponent(file.name)}`,'x-content-type-options':'nosniff','cache-control':'private, no-store'}});}
  if(!path.startsWith('/api/admin/'))return err(404,'接口不存在');
  if(!await isAdmin(request,env))return err(401,'请先登录');
+ const mailRetry=path.match(/^\/api\/admin\/mail\/jobs\/([^/]+)\/retry$/);
+ if(method==='POST'&&mailRetry){
+  if(!await rate(env,request,'mail-retry',20,3600))return err(429,'重试过于频繁，请稍后再试');
+  const id=decodeURIComponent(mailRetry[1]),job=await env.DB.prepare('SELECT j.*,e.created_at event_created_at FROM notification_jobs j JOIN ticket_events e ON e.id=j.event_id WHERE j.id=?').bind(id).first();if(!job)return err(404,'通知记录不存在');
+  if(!['failed','retry'].includes(job.status))return err(409,'该通知不需要重试');
+  if(job.provider_id)return err(409,'邮件服务已接收这条通知，请先核对投递结果，不重复发送');
+  if(job.event_created_at<new Date(Date.now()-23*3600000).toISOString().replace('T',' ').slice(0,19))return err(409,'这条通知已超出服务的去重时限，请先核对收件箱，避免重复发送');
+  await env.DB.prepare("UPDATE notification_jobs SET status='pending',attempts=0,next_attempt=0,error='',updated_at=CURRENT_TIMESTAMP WHERE id=? AND status IN ('failed','retry')").bind(id).run();scheduleMail(env,ctx);return json({ok:true});
+ }
+ if(method==='GET'&&path==='/api/admin/mail'){return json({configured:!!env.RESEND_API_KEY,receiving:!!env.RESEND_WEBHOOK_SECRET,adminConfigured:!!env.MAIL_ADMIN_TO,inbound:(await env.DB.prepare("SELECT id,email_id,status,error,ticket_id,created_at FROM mail_inbound WHERE status IN ('failed','rejected','unmatched','retry') ORDER BY created_at DESC LIMIT 30").all()).results});}
  if(method==='GET'&&path==='/api/admin/about')return json(await readAbout(env));
  if(method==='PUT'&&path==='/api/admin/about'){
   if(request.headers.get('origin')!==url.origin)return err(403,'请从本站后台保存配置');
@@ -123,7 +144,7 @@ async function route(request,env,ctx){const url=new URL(request.url), path=url.p
  if(method==='GET'&&path==='/api/admin/tickets'){
   const status=clean(url.searchParams.get('status'),20),project=clean(url.searchParams.get('project'),50),q=clean(url.searchParams.get('q'),100);
   const page=Math.max(1,Math.floor(Number(url.searchParams.get('page'))||1)),limit=Math.min(100,Math.max(1,Math.floor(Number(url.searchParams.get('limit'))||50)));
-  const where="(?='' OR t.status=?) AND (?='' OR p.slug=?) AND (?='' OR instr(lower(t.title),lower(?))>0 OR instr(lower(t.number),lower(?))>0)",params=[status,status,project,project,q,q,q];
+  const where="(?='' OR t.status=?) AND (?='' OR p.slug=?) AND (?='' OR instr(lower(t.title),lower(?))>0 OR instr(lower(t.number),lower(?))>0 OR instr(lower(t.body),lower(?))>0)",params=[status,status,project,project,q,q,q,q];
   const [rows,count]=await env.DB.batch([
    env.DB.prepare(`SELECT ${ticketListFields} FROM tickets t JOIN projects p ON p.id=t.project_id WHERE ${where} ORDER BY t.updated_at DESC,t.id DESC LIMIT ? OFFSET ?`).bind(...params,limit,(page-1)*limit),
    env.DB.prepare(`SELECT COUNT(*) total FROM tickets t JOIN projects p ON p.id=t.project_id WHERE ${where}`).bind(...params)
@@ -135,22 +156,18 @@ async function route(request,env,ctx){const url=new URL(request.url), path=url.p
   env.DB.prepare('SELECT id,role,body,created_at FROM messages WHERE ticket_id=? ORDER BY created_at,rowid').bind(t.id),
   env.DB.prepare('SELECT id,name,mime,bytes,created_at FROM attachments WHERE ticket_id=? ORDER BY created_at').bind(t.id),
   env.DB.prepare('SELECT status,error,updated_at FROM feedback_notifications WHERE ticket_id=?').bind(t.id)
- ]);return json({ticket:{...publicTicket(t),contact:t.contact},messages:messageRows.results,attachments:fileRows.results,notification:notification.results[0]||null});}
+ ]);return json({ticket:{...publicTicket(t),contact:t.contact,email:t.email,revision:t.revision},messages:messageRows.results,attachments:fileRows.results,notification:notification.results[0]||null,mail:(await env.DB.prepare("SELECT j.id,j.channel,j.audience,j.status,j.error,j.updated_at,(j.provider_id='' AND j.status IN ('failed','retry')) retryable FROM notification_jobs j JOIN ticket_events e ON e.id=j.event_id WHERE e.ticket_id=? ORDER BY e.created_at DESC,j.id LIMIT 12").bind(t.id).all()).results});}
  if(method==='POST'&&adt[2]==='notify'){if(!await rate(env,request,'notify',10,3600))return err(429,'推送过于频繁，请稍后再试');await notifyFeedback(env,{...t,project_name:t.project_name},url.origin);return json({ok:true,notification:await env.DB.prepare('SELECT status,error,updated_at FROM feedback_notifications WHERE ticket_id=?').bind(t.id).first()});}
- if(method==='PATCH'&&!adt[2]){const b=await request.json().catch(()=>({}));if(!['new','progress','resolved','closed'].includes(b.status))return err(400,'状态无效');const [,result]=await env.DB.batch([env.DB.prepare('UPDATE tickets SET status=?,updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(b.status,t.id),env.DB.prepare('SELECT status,updated_at FROM tickets WHERE id=?').bind(t.id)]);const saved=result.results[0];return json({ok:true,ticket:{...publicTicket(t),...saved,contact:t.contact}});}
- if(method==='POST'&&adt[2]==='reply'){
-  const b=await request.json().catch(()=>({})),body=String(b.body??'').trim();if(!body)return err(400,'回复不能为空');
-  if(b.status!==undefined&&!['new','progress','resolved','closed'].includes(b.status))return err(400,'状态无效');
-  const [,,saved,messageRows]=await env.DB.batch([
-   env.DB.prepare('INSERT INTO messages(id,ticket_id,role,body) VALUES(?,?,?,?)').bind(uuid(),t.id,b.internal?'internal':'admin',body),
-   env.DB.prepare('UPDATE tickets SET status=COALESCE(?,status),updated_at=CURRENT_TIMESTAMP WHERE id=?').bind(b.status??null,t.id),
-   env.DB.prepare('SELECT status,updated_at FROM tickets WHERE id=?').bind(t.id),
-   env.DB.prepare('SELECT id,role,body,created_at FROM messages WHERE ticket_id=? ORDER BY created_at,rowid').bind(t.id)
-  ]);
-  return json({ok:true,ticket:{...publicTicket(t),...saved.results[0],contact:t.contact},messages:messageRows.results});
- }}
+ if((method==='PATCH'&&!adt[2])||(method==='POST'&&adt[2]==='reply')){
+  const b=await request.json().catch(()=>({})),body=String(b.body??'').trim();
+  if(b.revision!==undefined&&(!Number.isSafeInteger(b.revision)||b.revision<0))return err(400,'反馈版本无效');
+  let saved;try{saved=await changeTicket(env,t,{body,status:b.status??t.status,internal:b.internal===true,revision:b.revision??t.revision});}catch(error){return err(error.status||500,error.message);}
+  if(saved.changed)scheduleMail(env,ctx,t.id);
+  return json({ok:true,changed:saved.changed,emailQueued:!!(saved.changed&&(!b.internal||(b.status&&b.status!==t.status))&&validEmail(t.email)),ticket:{...publicTicket(t),...(saved.ticket||{}),contact:t.contact,email:t.email,revision:saved.ticket?.revision??t.revision},messages:await messages(env,t.id)});
+ }
+ }
 
 
  return err(404,'接口不存在');
 }
-export default {async fetch(request,env,ctx){try {return await route(request,env,ctx);}catch(e){console.error(e);return err(500,'服务器暂时无法处理请求');}}};
+export default {async scheduled(event,env,ctx){ctx.waitUntil(drainMail(env));},async fetch(request,env,ctx){try {return await route(request,env,ctx);}catch(e){console.error(e);return err(500,'服务器暂时无法处理请求');}}};

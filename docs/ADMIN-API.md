@@ -44,7 +44,7 @@ personal 包含 name、bio、avatar、homeUrl、homeLabel、feedbackLabel、cont
 | GET | /about | 公开个人资料，剔除隐藏条目。 |
 | GET | /config | 兼容旧客户端，turnstileSiteKey 为空，不启用 CF 验证。 |
 | GET/HEAD | /project-images/:uuid.webp 或 .png | 当前仍被项目引用的 R2 图片，版本 URL 长期缓存。 |
-| POST | /tickets | multipart：project、kind、title、body 必填；title/body 任意非空，不设最短或最长字符数，也不静默截断。可附 app_version、platform、contact、files。返回 number、私密 url；后台异步发送企业微信通知。 |
+| POST | /tickets | multipart：project、email、body 必填；body 任意非空，不设字符数限制。可附 files。返回 number、私密 url；异步发送确认邮件、管理员邮件及企业微信通知。 |
 | GET | /t/:token | 私密 token 查反馈、公开回复、附件列表；不返回内部备注或联系方式。 |
 | POST | /t/:token/reply | multipart：body 或 files 至少一项；关闭的反馈不能继续回复。 |
 | GET | /attachments/:id | 后台会话或属于此附件反馈的有效 token 才能下载；不允许跨反馈访问附件。 |
@@ -56,3 +56,30 @@ personal 包含 name、bio、avatar、homeUrl、homeLabel、feedbackLabel、cont
 Worker secrets：WECOM_CORP_ID、WECOM_SECRET、WECOM_AGENT_ID、WECOM_TO_USER；PUBLIC_SITE_URL 为公开站点地址。凭据只通过本机已授权的私密配置注入，不提交源码。消息使用 text，包含项目、编号、标题、内容摘要和后台详情地址；按 UTF-8 字节裁剪摘要，保留完整入口。通知不包含反馈访问 token、联系方式和附件内容。
 
 feedback_notifications 记录 pending/sending/sent/failed/unknown/disabled、回执 ID 及错误。只有企业微信明确拒绝过期令牌才自动换令牌重试；请求结果未知不盲目重复发送。未配置或发送失败不会导致反馈提交失败。发布前执行 migrations/20261018-feedback-notifications.sql。
+
+## 邮件交流
+
+- `POST /api/tickets`：增加必填 `email`，前后端均校验格式；原 `contact` 保留给历史记录。返回私密链接，附件部分失败时仍返回 201 和 `warning`，避免重复建单。
+- `POST /api/admin/tickets/:id/reply`：支持 `body` 为空但 `status` 有实际变更。`revision` 为详情返回的整数版本；冲突返回 409，前端保留草稿。一次写入回复、状态、事件与通知任务。内部备注不出现在用户邮件里。
+- `PATCH /api/admin/tickets/:id`：继续兼容状态更新接口，同样记录状态事件与通知任务；新后台不会选择状态后自动调用。
+- `GET /api/admin/tickets/:id`：管理员详情增加 `email`、`revision`、`mail` 通知记录。公开详情不返回邮箱、角色回复标识或解密后的访问令牌。
+- `GET /api/admin/mail`：返回发信/回调/管理员邮箱配置是否齐全及需要处理的收信异常。不会返回凭据。
+- `POST /api/admin/mail/jobs/:encodedJobId/retry`：鉴权、同源和限流保护，只允许未获服务接收回执的失败任务重试；保留原幂等键，超过去重期限阻止盲重发。
+- `POST /api/mail/webhook`：Resend 原始请求体 Svix HMAC 验签，限制 5 分钟时差；签名有效后先持久化收信事件，再后台读取邮件正文、验证发件身份并处理。
+- 每分钟 `scheduled()`：处理待发送/重试任务和收到的邮件；使用数据库领取锁、失败退避和稳定幂等键。
+
+### 邮件处理规则
+
+发件人为 `feedback@pingme.pm`，用户和管理员的 Reply-To 是不同的带签名标识的 feedback+ 别名。直接回复到 `feedback@pingme.pm` 时，也可根据已知邮件引用头定位记录，但仍需验证发件人邮箱与 Resend 计算的域名认证结果。不能仅凭标题中的编号归档。
+
+用户邮件回复 → visitor 交流记录 + 管理员邮箱 + 企微；管理员邮件回复 → admin 交流记录 + 用户邮件。管理员正文第一行 `状态：已解决` 等命令可以合并更改状态。内部备注始终不外发。已关闭反馈的用户来信记录为拒绝处理，在后台邮件状态中可见。
+
+邮件附件最多 5 个、每个 10MB，允许范围与网页一致，保存到站内 R2。邮件正文以纯文本呈现，剔除常见引用历史；无法识别的格式仍需真实邮箱验收。
+
+公开访问令牌在邮件线程表中加密保存，角色归档标识仅存哈希。邮箱退信/投诉后暂停该记录后续用户邮件，并展示投递状态。普通邮件主题固定，并使用服务返回的 Message-ID 生成 In-Reply-To / References 维持邮件会话。
+
+## 简化反馈表单
+
+新提交只需 `project`、必填 `email`、必填 `body`，可选附件 `files`。不再接受用户选择反馈类型、填写标题、应用版本或操作系统；新记录的内部 `kind` 固定为 `feedback`，数据库 `title` 仅为描述自动摘要，用于列表、搜索与邮件主题。历史字段和旧记录保留，不执行破坏性迁移。
+
+管理员搜索覆盖描述全文。公开新反馈详情标题使用“反馈详情”，避免将自动摘要误作用户填写的标题；后台不再展示反馈分类。项目管理里的项目分类不受影响。

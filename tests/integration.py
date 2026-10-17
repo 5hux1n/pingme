@@ -39,22 +39,23 @@ suffix=uuid.uuid4().hex[:8];category='api-'+suffix;slug='test-'+suffix
 call('/admin/categories','POST',{'id':category,'name':'API 测试分类','description':'独立开发数据库','sort_order':99})
 project={'slug':slug,'name':'API 测试项目','description':'本地测试','official_url':'https://example.com','category':category,'sort_order':9,'homepage_visible':1,'visible':1,'enabled':1,'image_action':'keep'}
 call('/admin/projects','POST',project,201);call('/admin/projects','POST',project,409)
-fields={'project':slug,'kind':'bug','title':'字'*501,'body':'内容'*5000,'contact':'private-test@example.test'}
+fields={'project':slug,'body':'内容'*5000+'描述末尾关键词','email':'private-test@example.test'}
 created=multipart('/tickets',fields,[('files','sample.txt','text/plain',b'local attachment')],201,anonymous=True)
 public=call(created['url'],anonymous=True);ticket=public['ticket'];id=ticket['id']
-assert ticket['title']==fields['title'] and ticket['body']==fields['body'] and 'contact' not in ticket
-listing=call('/admin/tickets?project='+slug+'&q='+urllib.parse.quote('字'*20));assert listing['total']==1 and len(listing['tickets'][0]['title'])==201
-short=multipart('/tickets',{'project':slug,'kind':'bug','title':'短','body':'字'},expected=201,anonymous=True)
-assert call(short['url'],anonymous=True)['ticket']['title']=='短'
-multipart('/tickets',dict(fields,title=''),expected=400,anonymous=True)
+assert ticket['body']==fields['body'] and 'contact' not in ticket and ticket['kind']=='feedback';assert ticket['app_version']=='' and ticket['platform']==''
+listing=call('/admin/tickets?project='+slug+'&q='+urllib.parse.quote('内容'*20));assert listing['total']==1 and len(listing['tickets'][0]['title'])==81
+assert call('/admin/tickets?project='+slug+'&q='+urllib.parse.quote('描述末尾关键词'))['total']==1
+short=multipart('/tickets',{'project':slug,'body':'字','email':'private-test@example.test'},expected=201,anonymous=True)
+assert call(short['url'],anonymous=True)['ticket']['title']=='字'
+multipart('/tickets',dict(fields,email=''),expected=400,anonymous=True)
 multipart('/tickets',dict(fields,body=''),expected=400,anonymous=True)
 for status in ('progress','resolved','closed','new'):
  saved=call('/admin/tickets/'+id,'PATCH',{'status':status});assert saved['ticket']['status']==status
  assert call('/admin/tickets/'+id)['ticket']['status']==status
 call('/admin/tickets/'+id,'PATCH',{'status':'invalid'},400)
 call('/admin/tickets/'+id+'/reply','POST',{'body':'内部内容','internal':True})
-result=call('/admin/tickets/'+id+'/reply','POST',{'body':'开发者已收到反馈','internal':False,'status':'progress'});assert result['ticket']['status']=='progress';assert [m['body'] for m in result['messages']]==['内部内容','开发者已收到反馈']
-public=call(created['url'],anonymous=True);assert [m['body'] for m in public['messages']]==['开发者已收到反馈']
+result=call('/admin/tickets/'+id+'/reply','POST',{'body':'开发者已收到反馈','internal':False,'status':'progress'});assert result['ticket']['status']=='progress';assert any(m['role']=='internal' and m['body']=='内部内容' for m in result['messages']);assert result['messages'][-1]['body'].startswith('开发者已收到反馈')
+public=call(created['url'],anonymous=True);assert all(m['role']!='internal' for m in public['messages']);assert public['messages'][-1]['body'].startswith('开发者已收到反馈')
 attachment=public['attachments'][0]['id'];token=created['url'].split('/')[-1]
 call('/attachments/'+attachment,anonymous=True,expected=403)
 assert call('/attachments/'+attachment+'?token='+token,anonymous=True)==b'local attachment'

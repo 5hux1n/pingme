@@ -22,11 +22,11 @@ body:has(.pm-admin){min-width:0}
 }
 
 .a-account summary{display:flex;align-items:center;gap:6px}.a-account summary:after{content:none}.a-account-chevron{display:block;flex:none;color:#7b8490}
-.a-mobile-kind{display:none}
+
 .a-status-edit{display:block}.a-status-label{display:block;margin:0 0 6px;font-size:13px;font-weight:500;color:#485363}
 .a-status-controls{display:flex;align-items:center;gap:14px}.a-status-controls select{width:180px;flex:none}.a-status-controls #statusSaved{display:block;min-height:0;line-height:1.5}
 @media(max-width:700px){
- .a-tickets .a-feedback-cell>small{display:none}.a-tickets .a-project-cell{align-self:center}.a-mobile-kind{display:inline;color:var(--a-muted);font-size:11px}
+ .a-tickets .a-feedback-cell>small{display:none}.a-tickets .a-project-cell{align-self:center}
  .a-tickets .a-ticket-state{align-self:center}.a-status-controls{gap:10px}.a-status-controls select{width:150px}
 }
 
@@ -36,3 +36,7 @@ body:has(.pm-admin){min-width:0}
 .a-about-entry>summary::-webkit-details-marker{display:none}.a-about-entry>summary>span{min-width:0}.a-about-entry>summary strong{font-size:14px;font-weight:600;display:block}.a-about-entry>summary small{display:block;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:65ch}.a-about-entry>summary>svg{flex:none;color:var(--a-muted)}.a-about-entry[open]>summary>svg{transform:rotate(90deg)}
 .a-about-entry>.a-about-item{padding:18px;border-top:1px solid var(--a-line)}.a-about-item>header h3{font-size:13px;color:var(--a-muted);font-weight:400}
 @media(max-width:700px){.a-about-entry>summary{padding:14px}.a-about-entry>summary small{max-width:60vw}.a-about-entry>.a-about-item{padding:16px 14px}}
+
+.a-mail-receipts{font-size:12px;color:var(--a-muted);margin:0 0 20px}.a-mail-receipts summary{cursor:pointer}.a-mail-receipts p{margin:7px 0}.a-status-controls #statusSaved{min-width:60px}
+
+.a-mail-panel{padding:18px;background:white;border:1px solid var(--a-line);border-radius:5px;margin-bottom:20px;font-size:13px}.a-mail-panel h2{font-size:16px}.a-mail-panel small{display:block;overflow-wrap:anywhere}.a-mail-receipts button{font-size:12px}
