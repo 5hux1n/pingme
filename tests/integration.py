@@ -39,11 +39,11 @@ suffix=uuid.uuid4().hex[:8];category='api-'+suffix;slug='test-'+suffix
 call('/admin/categories','POST',{'id':category,'name':'API 测试分类','description':'独立开发数据库','sort_order':99})
 project={'slug':slug,'name':'API 测试项目','description':'本地测试','official_url':'https://example.com','category':category,'sort_order':9,'homepage_visible':1,'visible':1,'enabled':1,'image_action':'keep'}
 call('/admin/projects','POST',project,201);call('/admin/projects','POST',project,409)
-fields={'project':slug,'kind':'bug','title':'字'*180,'body':'内容'*5000,'contact':'private-test@example.test'}
+fields={'project':slug,'kind':'bug','title':'字'*501,'body':'内容'*5000,'contact':'private-test@example.test'}
 created=multipart('/tickets',fields,[('files','sample.txt','text/plain',b'local attachment')],201,anonymous=True)
 public=call(created['url'],anonymous=True);ticket=public['ticket'];id=ticket['id']
 assert ticket['title']==fields['title'] and ticket['body']==fields['body'] and 'contact' not in ticket
-assert call('/admin/tickets?project='+slug+'&q='+urllib.parse.quote('字'*20))['total']==1
+listing=call('/admin/tickets?project='+slug+'&q='+urllib.parse.quote('字'*20));assert listing['total']==1 and len(listing['tickets'][0]['title'])==201
 short=multipart('/tickets',{'project':slug,'kind':'bug','title':'短','body':'字'},expected=201,anonymous=True)
 assert call(short['url'],anonymous=True)['ticket']['title']=='短'
 multipart('/tickets',dict(fields,title=''),expected=400,anonymous=True)

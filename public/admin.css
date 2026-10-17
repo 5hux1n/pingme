@@ -6,3 +6,4 @@
 .a-notify-status{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;font-size:12px;margin-bottom:20px;color:#6b7580}
 
 .a-notify-status:empty{display:none}
+.a-image-upload:focus-within{outline:2px solid #3981c8;outline-offset:3px}
