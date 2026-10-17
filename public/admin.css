@@ -29,3 +29,10 @@ body:has(.pm-admin){min-width:0}
  .a-tickets .a-feedback-cell>small{display:none}.a-tickets .a-project-cell{align-self:center}.a-mobile-kind{display:inline;color:var(--a-muted);font-size:11px}
  .a-tickets .a-ticket-state{align-self:center}.a-status-controls{gap:10px}.a-status-controls select{width:150px}
 }
+
+.a-about-form{background:none;border:0;padding:0;max-width:860px}
+.a-about-card{background:#fff;border:1px solid var(--a-line);border-radius:6px;margin:14px 0}
+.a-about-entry>summary{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px;list-style:none;cursor:pointer}
+.a-about-entry>summary::-webkit-details-marker{display:none}.a-about-entry>summary>span{min-width:0}.a-about-entry>summary strong{font-size:14px;font-weight:600;display:block}.a-about-entry>summary small{display:block;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:65ch}.a-about-entry>summary>svg{flex:none;color:var(--a-muted)}.a-about-entry[open]>summary>svg{transform:rotate(90deg)}
+.a-about-entry>.a-about-item{padding:18px;border-top:1px solid var(--a-line)}.a-about-item>header h3{font-size:13px;color:var(--a-muted);font-weight:400}
+@media(max-width:700px){.a-about-entry>summary{padding:14px}.a-about-entry>summary small{max-width:60vw}.a-about-entry>.a-about-item{padding:16px 14px}}
