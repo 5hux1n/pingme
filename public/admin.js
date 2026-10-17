@@ -1,4 +1,4 @@
-import {processProjectImage} from './admin-image.js?v=20261018-admin-simple';
+import {processProjectImage} from './admin-image.js?v=20261018-inbox-tabs';
 const STATUS={new:'待处理',progress:'处理中',resolved:'已解决',closed:'已关闭'};
 const KINDS={bug:'问题反馈',unavailable:'功能不可用',update:'期待更新',suggestion:'功能建议',idea:'功能建议',question:'使用疑问',other:'其他反馈'};
 const ABOUT=[['profile','个人资料'],['contacts','联系方式'],['communities','社交账号'],['sites','个人站点'],['support','支持开发']];
@@ -18,7 +18,7 @@ export function createAdmin({root,api,esc,onCatalogChanged=()=>{}}){
  const statusTag=status=>`<span class="a-status s-${esc(status)}">${esc(STATUS[status]||status)}</span>`;
  const date=value=>value?String(value).replace('T',' ').slice(0,16):'';
  const routeUrl=value=>'/admin#'+value;
- function styles(){if(document.getElementById('adminStyles'))return;const link=document.createElement('link');link.id='adminStyles';link.rel='stylesheet';link.href='/admin.css?v=20261018-admin-simple';document.head.append(link);}
+ function styles(){if(document.getElementById('adminStyles'))return;const link=document.createElement('link');link.id='adminStyles';link.rel='stylesheet';link.href='/admin.css?v=20261018-inbox-tabs';document.head.append(link);}
  function notify(message,error=false){const box=$('#adminNotice');if(!box)return;box.hidden=false;box.className='a-notice'+(error?' is-error':'');box.setAttribute('role',error?'alert':'status');box.textContent=message;}
  function safeLeave(){if(busy){notify('正在保存，请稍候。');return false;}return !dirty||window.confirm('修改尚未保存，是否放弃修改？');}
  function clear(){authenticated=false;data=null;ticket=null;aboutDraft=null;dirty=false;tickets.clear();controller?.abort();view++;}
@@ -42,7 +42,7 @@ export function createAdmin({root,api,esc,onCatalogChanged=()=>{}}){
  function key(){return new URLSearchParams(filters).toString();}
  function inboxRows(result){
   const host=$('#ticketRows');if(!host)return;
-  host.innerHTML=result.tickets.length?`<table class="a-table a-tickets"><thead><tr><th>反馈</th><th>项目</th><th>状态</th><th>最近更新</th></tr></thead><tbody>${result.tickets.map(t=>`<tr><td><a class="a-title-link" href="${routeUrl('inbox/'+t.id)}" data-route="inbox/${esc(t.id)}">${esc(t.title)}</a><small>${esc(t.number)} · ${esc(KINDS[t.kind]||t.kind)}</small></td><td class="a-project-cell">${esc(t.project_name)}</td><td>${statusTag(t.status)}</td><td class="a-date">${esc(date(t.updated_at))}</td></tr>`).join('')}</tbody></table>`:`<p class="a-empty">${filters.q||filters.status||filters.project?'没有匹配的反馈。':'暂无反馈。'}</p>`;
+  host.innerHTML=result.tickets.length?`<table class="a-table a-tickets"><thead><tr><th class="a-sequence">序号</th><th>反馈</th><th>项目</th><th>状态</th><th>最近更新</th></tr></thead><tbody>${result.tickets.map((t,index)=>`<tr><td class="a-sequence">${(result.page-1)*result.limit+index+1}</td><td class="a-feedback-cell"><a class="a-title-link" href="${routeUrl('inbox/'+t.id)}" data-route="inbox/${esc(t.id)}">${esc(t.title)}</a><small>${esc(t.number)} · ${esc(KINDS[t.kind]||t.kind)}</small></td><td class="a-project-cell">${esc(t.project_name)}</td><td class="a-ticket-state">${statusTag(t.status)}</td><td class="a-date">${esc(date(t.updated_at))}</td></tr>`).join('')}</tbody></table>`:`<p class="a-empty">${filters.q||filters.status||filters.project?'没有匹配的反馈。':'暂无反馈。'}</p>`;
   const pages=Math.max(1,Math.ceil(result.total/result.limit));$('#ticketPager').innerHTML=`<span>${result.total} 条反馈</span><div class="a-actions">${button('ticketPrev','上一页')}<span>${filters.page} / ${pages}</span>${button('ticketNext','下一页')}</div>`;
   $('#ticketPrev').disabled=filters.page<=1;$('#ticketNext').disabled=filters.page>=pages;
   $('#ticketPrev').onclick=()=>{filters.page--;loadTickets();window.scrollTo(0,0);};$('#ticketNext').onclick=()=>{filters.page++;loadTickets();window.scrollTo(0,0);};bindLinks();
@@ -57,8 +57,12 @@ export function createAdmin({root,api,esc,onCatalogChanged=()=>{}}){
  }
  function inbox(){
   frame('收件箱',button('refreshInbox','刷新'));
-  $('#adminContent').innerHTML=`<section aria-label="筛选反馈" class="a-toolbar">${select('status','处理状态',opt('','全部状态',filters.status)+Object.entries(STATUS).map(([v,l])=>opt(v,l,filters.status)).join(''))}${select('project','所属项目',opt('','全部项目',filters.project)+data.projects.map(p=>opt(p.slug,p.name,filters.project)).join(''))}<label class="a-field a-search"><span>搜索</span><input type="search" name="q" value="${esc(filters.q)}" placeholder="标题或反馈编号" autocomplete="off"></label><span id="inboxProgress" role="status"></span></section><section id="ticketRows" aria-label="反馈列表"></section><footer id="ticketPager" class="a-pager"></footer>`;
-  for(const name of ['status','project'])$(`[name="${name}"]`).onchange=e=>{filters[name]=e.target.value;filters.page=1;clearTimeout(searchTimer);loadTickets();};
+  $('#adminContent').innerHTML=`<nav class="a-subnav a-inbox-status" aria-label="处理状态">${[['','全部'],...Object.entries(STATUS)].map(([value,label])=>`<button type="button" data-status="${value}" ${filters.status===value?'aria-current="page"':''}>${label}</button>`).join('')}</nav><section aria-label="筛选反馈" class="a-toolbar">${select('status','处理状态',opt('','全部状态',filters.status)+Object.entries(STATUS).map(([v,l])=>opt(v,l,filters.status)).join(''))}${select('project','所属项目',opt('','全部项目',filters.project)+data.projects.map(p=>opt(p.slug,p.name,filters.project)).join(''))}<label class="a-field a-search"><span>搜索</span><input type="search" name="q" value="${esc(filters.q)}" placeholder="标题或反馈编号" autocomplete="off"></label><span id="inboxProgress" role="status"></span></section><section id="ticketRows" aria-label="反馈列表"></section><footer id="ticketPager" class="a-pager"></footer>`;
+  $('[name="status"]').closest('label').classList.add('a-status-filter');
+  function setStatus(value){filters.status=value;filters.page=1;$('[name="status"]').value=value;$$('[data-status]').forEach(button=>{if(button.dataset.status===value)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});clearTimeout(searchTimer);loadTickets();}
+  $$('[data-status]').forEach(button=>button.onclick=()=>setStatus(button.dataset.status));
+  $('[name="status"]').onchange=e=>setStatus(e.target.value);
+  for(const name of ['project'])$(`[name="${name}"]`).onchange=e=>{filters[name]=e.target.value;filters.page=1;clearTimeout(searchTimer);loadTickets();};
   $('[name="q"]').oninput=e=>{filters.q=e.target.value;filters.page=1;controller?.abort();clearTimeout(searchTimer);searchTimer=setTimeout(()=>{if(route==='inbox')loadTickets();},250);};$('#refreshInbox').onclick=()=>loadTickets(true);loadTickets();
  }
  function updateCachedTicket(saved){tickets.clear();if(ticket)ticket.ticket={...ticket.ticket,...saved};}
