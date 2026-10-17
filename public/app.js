@@ -1,4 +1,4 @@
-import { createAdmin } from './admin.js?v=20261018-inbox-tabs';
+import { createAdmin } from './admin.js?v=20261018-inbox-align';
 const root=document.getElementById('app');
 const state={projects:[],categories:[]};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

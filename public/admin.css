@@ -20,3 +20,12 @@ body:has(.pm-admin){min-width:0}
  .a-tickets .a-project-cell{grid-column:2;grid-row:2}.a-tickets .a-ticket-state{grid-column:3;grid-row:2}
  .a-tickets .a-date{grid-column:2/-1}
 }
+
+.a-account summary{display:flex;align-items:center;gap:6px}.a-account summary:after{content:none}.a-account-chevron{display:block;flex:none;color:#7b8490}
+.a-mobile-kind{display:none}
+.a-status-edit{display:block}.a-status-label{display:block;margin:0 0 6px;font-size:13px;font-weight:500;color:#485363}
+.a-status-controls{display:flex;align-items:center;gap:14px}.a-status-controls select{width:180px;flex:none}.a-status-controls #statusSaved{display:block;min-height:0;line-height:1.5}
+@media(max-width:700px){
+ .a-tickets .a-feedback-cell>small{display:none}.a-tickets .a-project-cell{align-self:center}.a-mobile-kind{display:inline;color:var(--a-muted);font-size:11px}
+ .a-tickets .a-ticket-state{align-self:center}.a-status-controls{gap:10px}.a-status-controls select{width:150px}
+}
