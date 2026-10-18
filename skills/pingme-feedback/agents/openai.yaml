@@ -1,0 +1,4 @@
+interface:
+  display_name: "PingMe 反馈读取"
+  short_description: "按项目、编号和状态读取反馈详情及交流记录，按需下载附件并结合源码分析问题"
+  default_prompt: "使用 $pingme-feedback 查看指定项目的待处理反馈，读取详情并分析原因。"
