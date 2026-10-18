@@ -93,7 +93,6 @@ async function processIncoming(env,row){
  const from=mailbox(email.from),allowed=role==='admin'?adminAddresses(env):[t.email];
  if(!allowed.includes(from)||!validEmail(from))return finish('rejected','发件人与该回复地址的授权邮箱不符');
  if(!['pass'].includes(email.authentication?.dmarc)&&email.authentication?.dkim!=='pass')return finish('rejected','发件人域名验证未通过，未追加交流记录');
- if(role==='visitor'&&t.status==='closed')return finish('rejected','该反馈已关闭，未追加回复；请在网页提交新反馈');
  if(/^<[^<>\s]{1,250}>$/.test(email.message_id||''))await env.DB.prepare('UPDATE mail_threads SET '+(role==='admin'?'admin_message_id':'visitor_message_id')+'=? WHERE ticket_id=?').bind(email.message_id,t.id).run();
  const body=stripReply(email.text||htmlText(email.html)),parsed=role==='admin'?parseAdminReply(body):{body};
  const mid='mail-'+row.email_id;

@@ -46,7 +46,7 @@ personal 包含 name、bio、avatar、homeUrl、homeLabel、feedbackLabel、cont
 | GET/HEAD | /project-images/:uuid.webp 或 .png | 当前仍被项目引用的 R2 图片，版本 URL 长期缓存。 |
 | POST | /tickets | multipart：project、email、body 必填；body 任意非空，不设字符数限制。可附 files。返回 number、私密 url；异步发送确认邮件、管理员邮件及企业微信通知。 |
 | GET | /t/:token | 私密 token 查反馈、公开回复、附件列表；不返回内部备注或联系方式。 |
-| POST | /t/:token/reply | multipart：body 或 files 至少一项；关闭的反馈不能继续回复。 |
+| POST | /t/:token/reply | multipart：body 或 files 至少一项；已关闭反馈收到新回复后自动重新标记为待处理。 |
 | GET | /attachments/:id | 后台会话或属于此附件反馈的有效 token 才能下载；不允许跨反馈访问附件。 |
 
 附件最多 5 个，每个 10MB。限流：新反馈 8 次/小时，访客回复 15 次/小时，登录 8 次/15 分钟，修改密码 5 次/15 分钟，图片导入 30 次/小时，通知重试 10 次/小时。本文的字符无限制不改变 HTTP 平台及数据库的物理容量。
@@ -72,7 +72,7 @@ feedback_notifications 记录 pending/sending/sent/failed/unknown/disabled、回
 
 发件人为 `feedback@pingme.pm`，用户和管理员的 Reply-To 是不同的带签名标识的 feedback+ 别名。直接回复到 `feedback@pingme.pm` 时，也可根据已知邮件引用头定位记录，但仍需验证发件人邮箱与 Resend 计算的域名认证结果。不能仅凭标题中的编号归档。
 
-用户邮件回复 → visitor 交流记录 + 管理员邮箱 + 企微；管理员邮件回复 → admin 交流记录 + 用户邮件。管理员正文第一行 `状态：已解决` 等命令可以合并更改状态。内部备注始终不外发。已关闭反馈的用户来信记录为拒绝处理，在后台邮件状态中可见。
+用户邮件回复 → visitor 交流记录 + 管理员邮箱 + 企微；管理员邮件回复 → admin 交流记录 + 用户邮件。管理员正文第一行 `状态：已解决` 等命令可以合并更改状态。内部备注始终不外发。已关闭反馈仍可通过邮件或网页补充信息，补充后重新标记为待处理并通知管理员。
 
 邮件附件最多 5 个、每个 10MB，允许范围与网页一致，保存到站内 R2。邮件正文以纯文本呈现，剔除常见引用历史；无法识别的格式仍需真实邮箱验收。
 
@@ -87,3 +87,9 @@ feedback_notifications 记录 pending/sending/sent/failed/unknown/disabled、回
 ## AI 只读接口
 
 独立 Bearer 鉴权的 `/api/ai/` 路由，默认排除邮箱、内部备注及私密令牌。支持项目目录、分页搜索、按编号/ID 读取完整反馈与附件。AI 密钥不能作为后台登录凭据，也不能回复或改变状态。密钥范围、撤销和技能接入见 [AI-READ.md](AI-READ.md)。
+
+## 后台回复选项
+
+后台使用 `suppress_email` 布尔值控制本次保存是否发送用户邮件，默认 false。设为 true 时答复和状态正常公开保存，但不会创建该事件的用户邮件任务，定时任务也不会补发；下一次操作恢复默认通知。返回 `emailSuppressed` 与 `emailQueued` 区分静默保存和通知入队。历史内部备注保持私密；旧 `internal` 参数保留兼容，新界面不再提供创建入口。
+
+快捷答复仅填入可编辑草稿，并预选对应状态（已解决、处理中、已关闭），点击保存后才生效。已关闭反馈收到经过鉴权的用户邮件或有效私密链接的网页回复后，重新标记为待处理，保留关闭和补充记录，并通知管理员邮箱及企微。

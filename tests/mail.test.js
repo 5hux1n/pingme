@@ -71,3 +71,27 @@ test('minimal feedback uses description as summary and ignores removed form fiel
  const form=new FormData();for(const [key,value] of Object.entries({project:'demo',email:'user@example.com',body:'希望支持新功能。\n这里是完整描述。',title:'旧客户端标题',kind:'invalid',app_version:'旧版本字段',platform:'旧系统字段'}))form.set(key,value);
  const response=await f.call('/api/tickets',{method:'POST',body:form});assert.equal(response.status,201);const t=f.rows('SELECT * FROM tickets')[0];assert.equal(t.title,'希望支持新功能。 这里是完整描述。');assert.equal(t.body,'希望支持新功能。\n这里是完整描述。');assert.equal(t.kind,'feedback');assert.equal(t.app_version,'');assert.equal(t.platform,'');await f.flush();assert.ok(p.sent.every(x=>!x.body.text.includes('旧客户端标题')));
 }));
+
+test('suppress email saves a public answer and status, emits no mail and does not affect later replies',()=>withProvider(async(f,p)=>{
+ const {data}=await f.create();await f.flush();const t=f.rows('SELECT * FROM tickets')[0],baseline=p.sent.length;
+ const response=await adminChange(f,t.id,{body:'静默保存的公开答复',status:'resolved',suppress_email:true,revision:0});assert.equal(response.status,200);const saved=await response.json();assert.equal(saved.emailQueued,false);assert.equal(saved.emailSuppressed,true);await f.flush();await drainMail(f.env);
+ assert.equal(p.sent.length,baseline);assert.equal(f.rows('SELECT * FROM notification_jobs').length,3);
+ const view=await (await f.call('/api'+data.url)).json();assert.equal(view.ticket.status,'resolved');assert.match(view.messages.at(-1).body,/静默保存的公开答复/);assert.equal(view.messages.at(-1).role,'admin');
+ const normal=await adminChange(f,t.id,{body:'下一次正常通知',status:'resolved',revision:1});assert.equal((await normal.json()).emailQueued,true);await f.flush();assert.equal(p.sent.length,baseline+1);assert.match(p.sent.at(-1).body.text,/下一次正常通知/);
+}));
+test('suppressing a status-only update never sends it from the cron and rejects non-boolean options',()=>withProvider(async(f,p)=>{
+ await f.create();await f.flush();const t=f.rows('SELECT * FROM tickets')[0],before=p.sent.length;
+ assert.equal((await adminChange(f,t.id,{status:'closed',suppress_email:'true',revision:0})).status,400);
+ const response=await adminChange(f,t.id,{status:'closed',suppress_email:true,revision:0}),saved=await response.json();assert.equal(saved.ticket.status,'closed');assert.equal(saved.emailQueued,false);await f.flush();await drainMail(f.env);assert.equal(p.sent.length,before);
+ assert.match(f.rows('SELECT * FROM messages').at(-1).body,/已关闭/);
+}));
+test('a visitor can supplement a closed ticket on the web and reopen it without losing the conversation',()=>withProvider(async(f,p)=>{
+ const {data}=await f.create();await f.flush();const t=f.rows('SELECT * FROM tickets')[0];await adminChange(f,t.id,{body:'信息不足，等待补充',status:'closed',suppress_email:true,revision:0});
+ const form=new FormData();form.set('body','补充复现步骤和版本');assert.equal((await f.call('/api'+data.url+'/reply',{method:'POST',body:form})).status,200);await f.flush();
+ const view=await (await f.call('/api'+data.url)).json();assert.equal(view.ticket.status,'new');assert.match(view.messages.at(-1).body,/已关闭 → 待处理/);assert.equal(view.messages.length,2);
+ assert.equal(p.sent.at(-1).body.to[0],'admin@example.com');assert.match(p.sent.at(-1).body.text,/已关闭 → 待处理/);assert.equal(f.rows("SELECT * FROM notification_jobs WHERE channel='wecom' AND status='sent'").length,2);
+}));
+test('authenticated mail supplements reopen a closed ticket and still notify the administrator',()=>withProvider(async(f,p)=>{
+ await f.create();await f.flush();const t=f.rows('SELECT * FROM tickets')[0],to=p.sent.find(x=>x.body.to[0]==='user@example.com').body.reply_to;await adminChange(f,t.id,{status:'closed',suppress_email:true,revision:0});
+ const id=crypto.randomUUID();p.received.set(id,incoming(id,to,'user@example.com','邮件补充新线索'));assert.equal((await webhookRequest(f,id)).status,200);await f.flush();assert.equal(f.rows('SELECT * FROM tickets')[0].status,'new');assert.equal(f.rows('SELECT * FROM mail_inbound')[0].status,'processed');assert.match(p.sent.at(-1).body.text,/邮件补充新线索/);assert.match(p.sent.at(-1).body.text,/已关闭 → 待处理/);
+}));

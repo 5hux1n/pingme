@@ -56,11 +56,14 @@ call('/admin/tickets/'+id,'PATCH',{'status':'invalid'},400)
 call('/admin/tickets/'+id+'/reply','POST',{'body':'内部内容','internal':True})
 result=call('/admin/tickets/'+id+'/reply','POST',{'body':'开发者已收到反馈','internal':False,'status':'progress'});assert result['ticket']['status']=='progress';assert any(m['role']=='internal' and m['body']=='内部内容' for m in result['messages']);assert result['messages'][-1]['body'].startswith('开发者已收到反馈')
 public=call(created['url'],anonymous=True);assert all(m['role']!='internal' for m in public['messages']);assert public['messages'][-1]['body'].startswith('开发者已收到反馈')
+muted=call('/admin/tickets/'+id+'/reply','POST',{'body':'不发邮件的公开答复','status':'resolved','suppress_email':True});assert muted['emailSuppressed'] and not muted['emailQueued']
+assert call(created['url'],anonymous=True)['messages'][-1]['body'].startswith('不发邮件的公开答复')
 attachment=public['attachments'][0]['id'];token=created['url'].split('/')[-1]
 call('/attachments/'+attachment,anonymous=True,expected=403)
 assert call('/attachments/'+attachment+'?token='+token,anonymous=True)==b'local attachment'
 call('/admin/tickets/'+id,'PATCH',{'status':'closed'})
-multipart(created['url']+'/reply',{'body':'不能回复已关闭反馈'},expected=403,anonymous=True)
+multipart(created['url']+'/reply',{'body':'补充已关闭反馈的新线索'},anonymous=True)
+assert call(created['url'],anonymous=True)['ticket']['status']=='new'
 call('/admin/tickets/'+id,'PATCH',{'status':'new'})
 print('PASS unrestricted short/long feedback, four persisted statuses, replies, internal visibility, private attachments')
 call('/admin/categories/'+category,'DELETE',expected=409)
