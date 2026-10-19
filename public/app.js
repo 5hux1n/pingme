@@ -1,6 +1,6 @@
 import {formatBeijingTime} from './time.js?v=20261019-beijing-time';
 import {feedbackFiles} from './feedback-media.js?v=20261019-feedback-files';
-import { createAdmin } from './admin.js?v=20261019-detail-copy';
+import { createAdmin } from './admin.js?v=20261019-nav-underline';
 const root=document.getElementById('app');
 const state={projects:[],categories:[]};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

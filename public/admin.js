@@ -24,7 +24,7 @@ export function createAdmin({root,api,esc,onCatalogChanged=()=>{}}){
  const statusTag=status=>`<span class="a-status s-${esc(status)}">${esc(STATUS[status]||status)}</span>`;
  const date=value=>formatBeijingTime(value);
  const routeUrl=value=>'/admin#'+value;
- function styles(){if(document.getElementById('adminStyles'))return;const link=document.createElement('link');link.id='adminStyles';link.rel='stylesheet';link.href='/admin.css?v=20261019-feedback-files';document.head.append(link);}
+ function styles(){if(document.getElementById('adminStyles'))return;const link=document.createElement('link');link.id='adminStyles';link.rel='stylesheet';link.href='/admin.css?v=20261019-nav-underline';document.head.append(link);}
  function notify(message,error=false){const box=$('#adminNotice');if(!box)return;box.hidden=false;box.className='a-notice'+(error?' is-error':'');box.setAttribute('role',error?'alert':'status');box.textContent=message;}
  function safeLeave(){if(busy){notify('正在保存，请稍候。');return false;}return !dirty||window.confirm('修改尚未保存，是否放弃修改？');}
  function clear(){authenticated=false;data=null;ticket=null;aboutDraft=null;dirty=false;tickets.clear();controller?.abort();view++;}
