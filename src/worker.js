@@ -1,4 +1,5 @@
 import {validEmail,changeTicket,visitorEvent,eventStatement,jobStatements} from './ticket-events.js';
+import {shortTicketToken,validTicketToken} from './ticket-access.js';
 import {aiRead} from './ai-read.js';
 import {threadStatement,mailWebhook,drainMail} from './mail.js';
 import { notifyFeedback } from './wecom.js';
@@ -42,7 +43,7 @@ async function messages(env,id){return (await env.DB.prepare('SELECT id,role,bod
 async function attachments(env,id){return (await env.DB.prepare("SELECT a.id,a.name,a.mime,a.bytes,a.created_at,a.message_id,(m.role='internal') internal FROM attachments a LEFT JOIN messages m ON m.id=a.message_id WHERE a.ticket_id=? ORDER BY a.created_at,a.rowid").bind(id).all()).results;}
 async function storeFiles(env,form,ticketId,messageId=null){const files=form.getAll('files').filter(f=>f instanceof File && f.size>0);if(files.length>5)throw new Error('最多上传 5 个附件');for(const file of files){if(file.size>10*1024*1024)throw new Error('单个附件不能超过 10MB');if(!allowedExt.has(fileExt(file.name))||!allowedTypes.has(file.type))throw new Error('不支持的附件格式：'+file.name);}
  for(const file of files){const id=uuid(), key=`${ticketId}/${id}`;await env.FILES.put(key,file.stream(),{httpMetadata:{contentType:'application/octet-stream'}});await env.DB.prepare('INSERT INTO attachments(id,ticket_id,message_id,name,mime,bytes,object_key) VALUES(?,?,?,?,?,?,?)').bind(id,ticketId,messageId,clean(file.name,150),file.type||'application/octet-stream',file.size,key).run();}}
-async function getTicket(env,token){if(!/^[a-f0-9]{64}$/.test(token||''))return null;return env.DB.prepare('SELECT t.*,p.name project_name,p.slug project_slug FROM tickets t JOIN projects p ON p.id=t.project_id WHERE t.access_hash=?').bind(await hash(token)).first();}
+async function getTicket(env,token){if(!validTicketToken(token))return null;return env.DB.prepare('SELECT t.*,p.name project_name,p.slug project_slug FROM tickets t JOIN projects p ON p.id=t.project_id WHERE t.access_hash=?').bind(await hash(token)).first();}
 const ticketListFields="t.id,t.number,t.kind,CASE WHEN length(t.title)>200 THEN substr(t.title,1,200)||'…' ELSE t.title END title,t.status,t.created_at,t.updated_at,p.name project_name,p.slug project_slug";
 async function adminSnapshot(env){
  const [projects,groups,tickets,about,total]=await env.DB.batch([
@@ -84,19 +85,19 @@ async function route(request,env,ctx){const url=new URL(request.url), path=url.p
   const kind='feedback',summary=Array.from(body.slice(0,240).replace(/\s+/g,' ')),title=summary.slice(0,80).join('')+(summary.length>80||body.length>240?'…':'');
   const email=String(form.get('email')??'').trim().toLowerCase();if(!validEmail(email))return err(400,'请填写有效的邮箱地址，用于接收反馈回执和后续回复');
   const fs=form.getAll('files').filter(f=>f instanceof File&&f.size>0);if(fs.length>5||fs.some(f=>f.size>10*1024*1024||!allowedExt.has(fileExt(f.name))||!allowedTypes.has(f.type)))return err(400,'附件最多 5 个，每个不超过 10MB，仅允许常见图片、视频、日志、ZIP 和 PDF');
-  const id=uuid(),token=randomToken(),number='PM-'+new Date().toISOString().slice(0,10).replaceAll('-','')+'-'+id.slice(0,6).toUpperCase();
+  const id=uuid(),number='PM-'+new Date().toISOString().slice(0,10).replaceAll('-','')+'-'+id.slice(0,6).toUpperCase();let token;
   const event={id:uuid(),ticket_id:id,kind:'created',body,status:'new',previous_status:'new',role:'visitor'};
-  await env.DB.batch([
+  for(let attempt=0;attempt<5;attempt++){token=shortTicketToken();try{await env.DB.batch([
    env.DB.prepare('INSERT INTO tickets(id,number,project_id,kind,title,body,app_version,platform,contact,email,access_hash,last_event_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').bind(id,number,project.id,kind,title,body,'','','',email,await hash(token),event.id),
    await threadStatement(env,id,token),eventStatement(env,event),...jobStatements(env,event.id,{visitor:true,admin:true,wecom:true,waitingFiles:true})
-  ]);
+  ]);break;}catch(error){if(attempt===4||!/UNIQUE constraint failed: tickets\.access_hash/.test(String(error.cause?.message||error.message)))throw error;}}
   let warning='';try{await storeFiles(env,form,id);}catch{warning='反馈已保存，但部分附件上传失败，请在反馈详情中补充。';}
   await env.DB.prepare("UPDATE notification_jobs SET status='pending',updated_at=CURRENT_TIMESTAMP WHERE event_id=? AND status='waiting_files'").bind(event.id).run();
   scheduleMail(env,ctx,id);
   return json({ok:true,number,url:`/t/${token}`,...(warning?{warning}:{})},201);
  }
- const publicMatch=path.match(/^\/api\/t\/([a-f0-9]{64})(?:\/(reply))?$/);
- if(publicMatch){const token=publicMatch[1],t=await getTicket(env,token);if(!t)return err(404,'反馈不存在');if(method==='GET'&&!publicMatch[2])return json({ticket:publicTicket(t),messages:(await messages(env,t.id)).filter(m=>m.role!=='internal'),attachments:(await attachments(env,t.id)).filter(f=>!f.message_id||!f.internal)});
+ const publicMatch=path.match(/^\/api\/t\/([A-Za-z0-9]{12}|[a-f0-9]{64})(?:\/(reply))?$/);
+ if(publicMatch){if(!await rate(env,request,'ticket-access',120,900))return err(429,'访问过于频繁，请稍后再试');const token=publicMatch[1],t=await getTicket(env,token);if(!t)return err(404,'反馈不存在');if(method==='GET'&&!publicMatch[2])return json({ticket:publicTicket(t),messages:(await messages(env,t.id)).filter(m=>m.role!=='internal'),attachments:(await attachments(env,t.id)).filter(f=>!f.message_id||!f.internal)});
   if(method==='POST'&&publicMatch[2]){if(!await rate(env,request,'reply',15,3600))return err(429,'回复过于频繁');const form=await request.formData().catch(()=>null);if(!form)return err(400,'格式错误');const body=String(form.get('body')??'').trim();if(!body && !form.getAll('files').some(f=>f instanceof File&&f.size))return err(400,'请输入回复或添加附件');const fs=form.getAll('files').filter(f=>f instanceof File&&f.size>0);if(fs.length>5||fs.some(f=>f.size>10*1024*1024||!allowedExt.has(fileExt(f.name))||!allowedTypes.has(f.type)))return err(400,'附件不符合要求');const mid=uuid();await storeFiles(env,form,t.id,mid);await visitorEvent(env,t,body,{eventId:mid});scheduleMail(env,ctx,t.id);return json({ok:true});}}
  const attachmentMatch=path.match(/^\/api\/attachments\/([a-f0-9-]{36})$/);
  if(method==='GET'&&attachmentMatch){const file=await env.DB.prepare('SELECT * FROM attachments WHERE id=?').bind(attachmentMatch[1]).first();if(!file)return err(404,'文件不存在');const tok=url.searchParams.get('token');if(!await isAdmin(request,env)){const t=await getTicket(env,tok);if(!t||t.id!==file.ticket_id)return err(403,'无权访问');if(file.message_id&&(await env.DB.prepare('SELECT role FROM messages WHERE id=?').bind(file.message_id).first())?.role==='internal')return err(403,'无权访问');}const obj=await env.FILES.get(file.object_key);if(!obj)return err(404,'附件已丢失');const safeName=file.name.replace(/[\r\n"\\]/g,'_');return new Response(obj.body,{headers:{'content-type':'application/octet-stream','content-disposition':`attachment; filename="${safeName.replace(/[^\x20-\x7e]/g,'_')}"; filename*=UTF-8''${encodeURIComponent(file.name)}`,'x-content-type-options':'nosniff','cache-control':'private, no-store'}});}

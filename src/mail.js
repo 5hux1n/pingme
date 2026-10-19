@@ -1,3 +1,4 @@
+import {renderFeedbackMail} from './mail-template.js';
 import {STATUS,validEmail,changeTicket,visitorEvent} from './ticket-events.js';
 import {notifyFeedback,sendConversationNotice} from './wecom.js';
 const enc=new TextEncoder(),hex=bytes=>[...new Uint8Array(bytes)].map(n=>n.toString(16).padStart(2,'0')).join('');
@@ -14,7 +15,6 @@ export async function threadStatement(env,id,token=''){return env.DB.prepare('IN
 export const mailbox=value=>String(value||'').match(/<([^<>]+)>/)?.[1]?.trim().toLowerCase()||String(value||'').trim().toLowerCase();
 export const adminAddresses=env=>String(env.MAIL_ADMIN_TO||'').split(',').map(mailbox).filter(validEmail);
 function replyAddress(env,id,role){return replyKey(env,id,role).then(key=>'feedback+'+(role==='admin'?'a':'u')+'_'+key+'@'+(env.MAIL_DOMAIN||'pingme.pm'));}
-const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let nextResendSlot=0;
 export async function resend(env,path,options={}){
  if(!env.RESEND_API_KEY)throw Error('邮件服务尚未配置');
@@ -28,12 +28,10 @@ export async function emailContent(env,t,event,audience){
  const token=admin?'':await unseal(env,thread?.access_token),link=new URL(admin?'/admin#inbox/'+t.id:token?'/t/'+token:'/'+t.project_slug,env.PUBLIC_SITE_URL).href;
  const heading=event.kind==='created'?(admin?'收到新反馈':'反馈已提交'):event.kind==='status'?'反馈状态更新':admin?'用户补充了反馈':'开发者回复了反馈';
  const original=event.body||'',body=original.slice(0,18000)+(original.length>18000?'\n…（内容较长，请通过查看链接阅读完整记录）':''),status=STATUS[event.status]||event.status;
- const info=[heading,'项目：'+t.project_name,'编号：'+t.number,'反馈摘要：'+t.title.slice(0,500)+(t.title.length>500?'…':''),'当前状态：'+status,...(event.previous_status!==event.status?['状态变更：'+STATUS[event.previous_status]+' → '+status]:[]),...(admin&&t.email?['用户邮箱：'+t.email]:[])].join('\n');
  const files=(await env.DB.prepare('SELECT id,name FROM attachments WHERE ticket_id=? AND (message_id=? OR (?=\'created\' AND message_id IS NULL))').bind(t.id,event.id,event.kind).all()).results;
- const attachmentText=files.map(f=>f.name+'：'+new URL('/api/attachments/'+f.id+(token?'?token='+token:''),env.PUBLIC_SITE_URL).href).join('\n');
- const footer='查看完整记录：'+link+'\n直接回复这封邮件可继续交流。'+(admin?'\n可在正文第一行写“状态：已解决”等状态，同时保存状态和答复。':'')+'\n请勿转发这封邮件，回复地址和查看链接仅供本条反馈使用。';
- const text=info+'\n\n'+body+(attachmentText?'\n\n附件：\n'+attachmentText:'')+'\n\n'+footer;
- return {from:env.MAIL_FROM||'PingMe <feedback@pingme.pm>',to:admin?adminAddresses(env):[t.email],reply_to:await replyAddress(env,t.id,audience),subject:('[PingMe]['+t.number+'] '+t.title).replace(/[\r\n]/g,' ').slice(0,230),text,html:`<!doctype html><html lang="zh-CN"><body style="font:15px/1.8 sans-serif;color:#263344"><div style="max-width:640px;margin:auto;padding:24px"><h2>${esc(heading)}</h2><p style="white-space:pre-wrap">${esc(info)}</p><hr><div style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(body)}</div>${attachmentText?'<p style="white-space:pre-wrap">'+esc('附件：\n'+attachmentText)+'</p>':''}<hr><p><a href="${esc(link)}">查看完整反馈记录</a></p><p style="white-space:pre-wrap;color:#66717d;font-size:13px">${esc(footer)}</p></div></body></html>`,headers:{'Auto-Submitted':'auto-generated','X-Auto-Response-Suppress':'All',...(/^<[^<>\s]{1,250}>$/.test(parent||'')?{'In-Reply-To':parent,'References':parent}:{})}};
+ const attachments=files.map(f=>({name:f.name,url:new URL('/api/attachments/'+f.id+(token?'?token='+token:''),env.PUBLIC_SITE_URL).href}));
+ const content=renderFeedbackMail({heading,projectName:t.project_name,number:t.number,status,previousStatus:STATUS[event.previous_status]||event.previous_status,statusCode:event.status,body,attachments,link,admin,userEmail:admin?t.email:''});
+ return {from:env.MAIL_FROM||'PingMe <feedback@pingme.pm>',to:admin?adminAddresses(env):[t.email],reply_to:await replyAddress(env,t.id,audience),...content,headers:{'Auto-Submitted':'auto-generated','X-Auto-Response-Suppress':'All',...(/^<[^<>\s]{1,250}>$/.test(parent||'')?{'In-Reply-To':parent,'References':parent}:{})}};
 }
 export async function verifyWebhook(body,headers,secret,now=Date.now()){
  if(!secret)return false;const id=headers.get('svix-id')||'',stamp=headers.get('svix-timestamp')||'';if(!id||!/^\d+$/.test(stamp)||Math.abs(now/1000-Number(stamp))>300)return false;

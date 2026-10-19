@@ -50,7 +50,7 @@ test('operator can retry a failed job only with authenticated same-origin access
 }));
 test('attachment storage failure returns the saved private link and still queues confirmation',()=>withProvider(async(f,p)=>{
  f.env.FILES.put=async()=>{throw Error('simulated storage failure');};const form=new FormData();for(const [k,v] of Object.entries({project:'demo',kind:'bug',title:'附件测试',body:'内容',email:'user@example.com'}))form.set(k,v);form.set('files',new File(['hello'],'sample.txt',{type:'text/plain'}));
- const response=await f.call('/api/tickets',{method:'POST',body:form}),data=await response.json();assert.equal(response.status,201);assert.match(data.warning,/附件/);assert.match(data.url,/^\/t\/[a-f0-9]{64}$/);await f.flush();assert.equal(p.sent.length,2);
+ const response=await f.call('/api/tickets',{method:'POST',body:form}),data=await response.json();assert.equal(response.status,201);assert.match(data.warning,/附件/);assert.match(data.url,/^\/t\/[A-Za-z0-9]{12}$/);await f.flush();assert.equal(p.sent.length,2);
 }));
 test('incoming attachment metadata is persisted with its message and duplicate webhook is harmless',()=>withProvider(async(f,p)=>{
  await f.create();await f.flush();const address=p.sent.find(x=>x.body.to[0]==='user@example.com').body.reply_to,id=crypto.randomUUID(),aid=crypto.randomUUID(),email=incoming(id,address,'user@example.com','附上日志');email.attachments=[{id:aid}];p.received.set(id,email);const normal=p.fetch;
