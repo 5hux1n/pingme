@@ -1,4 +1,5 @@
 import {renderFeedbackMail} from './mail-template.js';
+import {mailFiles} from './feedback-files.js';
 import {STATUS,validEmail,changeTicket,visitorEvent} from './ticket-events.js';
 import {notifyFeedback,sendConversationNotice} from './wecom.js';
 const enc=new TextEncoder(),hex=bytes=>[...new Uint8Array(bytes)].map(n=>n.toString(16).padStart(2,'0')).join('');
@@ -28,10 +29,11 @@ export async function emailContent(env,t,event,audience){
  const token=admin?'':await unseal(env,thread?.access_token),link=new URL(admin?'/admin#inbox/'+t.id:token?'/t/'+token:'/'+t.project_slug,env.PUBLIC_SITE_URL).href;
  const heading=event.kind==='created'?(admin?'收到新反馈':'反馈已提交'):event.kind==='status'?'反馈状态更新':admin?'用户补充了反馈':'开发者回复了反馈';
  const original=event.body||'',body=original.slice(0,18000)+(original.length>18000?'\n…（内容较长，请通过查看链接阅读完整记录）':''),status=STATUS[event.status]||event.status;
- const files=(await env.DB.prepare('SELECT id,name FROM attachments WHERE ticket_id=? AND (message_id=? OR (?=\'created\' AND message_id IS NULL))').bind(t.id,event.id,event.kind).all()).results;
- const attachments=files.map(f=>({name:f.name,url:new URL('/api/attachments/'+f.id+(token?'?token='+token:''),env.PUBLIC_SITE_URL).href}));
- const content=renderFeedbackMail({heading,projectName:t.project_name,number:t.number,status,previousStatus:STATUS[event.previous_status]||event.previous_status,statusCode:event.status,body,attachments,link,admin,userEmail:admin?t.email:''});
- return {from:env.MAIL_FROM||'PingMe <feedback@pingme.pm>',to:admin?adminAddresses(env):[t.email],reply_to:await replyAddress(env,t.id,audience),...content,headers:{'Auto-Submitted':'auto-generated','X-Auto-Response-Suppress':'All',...(/^<[^<>\s]{1,250}>$/.test(parent||'')?{'In-Reply-To':parent,'References':parent}:{})}};
+ const files=(await env.DB.prepare("SELECT a.id,a.name,a.mime,a.bytes,a.object_key FROM attachments a LEFT JOIN messages m ON m.id=a.message_id WHERE a.ticket_id=? AND (a.message_id=? OR (?='created' AND a.message_id IS NULL)) AND (?='admin' OR m.role IS NULL OR m.role<>'internal')").bind(t.id,event.id,event.kind,audience).all()).results;
+ const {attachments,omitted}=await mailFiles(env,files);
+ const attachmentNote=[attachments.length?`${attachments.length} 个文件已随信附上。`:'',omitted?`另有 ${omitted} 个文件请通过反馈页面查看。`:''].filter(Boolean).join('');
+ const content=renderFeedbackMail({heading,projectName:t.project_name,number:t.number,status,previousStatus:STATUS[event.previous_status]||event.previous_status,statusCode:event.status,body,attachmentNote,link,admin,userEmail:admin?t.email:''});
+ return {from:env.MAIL_FROM||'PingMe <feedback@pingme.pm>',to:admin?adminAddresses(env):[t.email],reply_to:await replyAddress(env,t.id,audience),...content,...(attachments.length?{attachments}:{}),headers:{'Auto-Submitted':'auto-generated','X-Auto-Response-Suppress':'All',...(/^<[^<>\s]{1,250}>$/.test(parent||'')?{'In-Reply-To':parent,'References':parent}:{})}};
 }
 export async function verifyWebhook(body,headers,secret,now=Date.now()){
  if(!secret)return false;const id=headers.get('svix-id')||'',stamp=headers.get('svix-timestamp')||'';if(!id||!/^\d+$/.test(stamp)||Math.abs(now/1000-Number(stamp))>300)return false;

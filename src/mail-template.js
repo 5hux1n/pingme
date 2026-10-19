@@ -3,8 +3,8 @@ const lines=value=>escape(value).replace(/\r\n?/g,'\n').replace(/\n/g,'<br>');
 const url=value=>{const u=new URL(value);if(!['https:','http:'].includes(u.protocol)||u.username||u.password)throw Error('Invalid mail link');return u.href;};
 
 // Ordinary correspondence, with the latest message ahead of supporting metadata.
-export function renderFeedbackMail({heading,projectName,number,status,previousStatus,statusCode,body='',attachments=[],link,admin=false,userEmail='',preview=false}){
- link=url(link);attachments=attachments.map(file=>({...file,url:url(file.url)}));
+export function renderFeedbackMail({heading,projectName,number,status,previousStatus,statusCode,body='',attachmentNote='',link,admin=false,userEmail='',preview=false}){
+ link=url(link);
  const transition=previousStatus&&previousStatus!==status?previousStatus+' → '+status:status;
  const project=String(projectName||'PingMe'),subject='[PingMe] '+Array.from(project.replace(/[\r\n]+/g,' ')).slice(0,60).join('')+' · 反馈交流';
  const replyHint=admin?'直接回复此邮件即可答复用户。':'直接回复此邮件即可补充信息，回复会追加到本条反馈。';
@@ -14,7 +14,7 @@ export function renderFeedbackMail({heading,projectName,number,status,previousSt
  const content=body||'反馈状态已更新为“'+status+'”。';
  const action=admin?'查看反馈记录':'查看与补充反馈';
  const reference=admin&&number?'参考编号：'+number:'';
- const text=[project+' · '+heading,'状态：'+transition,content,contact,attachments.length?'附件：\n'+attachments.map(f=>f.name+'：'+f.url).join('\n'):'',action+'：'+link,replyHint,commandHint,reference,'PingMe · 请勿转发此邮件。',note].filter(Boolean).join('\n\n');
+ const text=[project+' · '+heading,'状态：'+transition,content,contact,attachmentNote,action+'：'+link,replyHint,commandHint,reference,'PingMe · 请勿转发此邮件。',note].filter(Boolean).join('\n\n');
  const preheader=project+' · '+transition+' · '+content.replace(/\s+/g,' ').slice(0,90);
  const html=`<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(heading)}</title></head>
 <body style="margin:0;padding:0;width:100%;background-color:#ffffff;color:#252a30;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',Arial,sans-serif;-webkit-text-size-adjust:100%">
@@ -24,7 +24,7 @@ export function renderFeedbackMail({heading,projectName,number,status,previousSt
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:580px;border-collapse:collapse;text-align:left"><tr><td style="word-break:break-word">
 <p style="margin:0 0 22px;font-size:13px;line-height:1.8;color:#747b83"><strong style="color:#252a30;font-size:15px">${escape(project)}</strong> · ${escape(heading)}<br>${escape(transition)}</p>
 <div style="font-size:16px;line-height:1.9;color:#252a30;overflow-wrap:anywhere;word-break:break-word">${lines(content)}</div>
-${attachments.length?`<p style="margin:20px 0 6px;font-size:12px;line-height:20px;color:#747b83">附件 · ${attachments.length}</p>${attachments.map(file=>`<p style="margin:5px 0;font-size:14px;line-height:23px;word-break:break-word"><a href="${escape(file.url)}" style="color:#28629a;text-decoration:underline">${escape(file.name)}</a></p>`).join('')}`:''}
+${attachmentNote?`<p style="margin:18px 0 0;font-size:12px;line-height:1.8;color:#747b83">${escape(attachmentNote)}</p>`:''}
 ${contact?`<p style="margin:24px 0 0;font-size:12px;line-height:21px;color:#747b83;word-break:break-word">用户邮箱：<a href="mailto:${escape(encodeURIComponent(userEmail))}" style="color:#747b83;text-decoration:none">${escape(userEmail)}</a></p>`:''}
 <p style="margin:20px 0 0;font-size:14px;line-height:1.8"><a href="${escape(link)}" style="color:#28629a;text-decoration:underline">${action}</a></p>
 <p style="margin:22px 0 0;font-size:12px;line-height:1.8;color:#747b83">${escape(replyHint)}${commandHint?'<br>'+escape(commandHint):''}</p>
