@@ -42,7 +42,7 @@ python3 scripts/ai-keys.py deploy
 ```sh
 python3 ~/.codex/skills/pingme-feedback/scripts/pingme.py projects
 python3 ~/.codex/skills/pingme-feedback/scripts/pingme.py search --project fakenotify --status new
-python3 ~/.codex/skills/pingme-feedback/scripts/pingme.py get PM-20261017-816053
+python3 ~/.codex/skills/pingme-feedback/scripts/pingme.py get PM20261021545641
 ```
 
 可用全局 `--config` 指定其他客户端文件，或配置 `PINGME_AI_TOKEN` / `PINGME_URL` 环境变量。脚本不跟随 HTTP 重定向，不转发凭据至其他站点。附件下载使用详情返回的 ID 和显式输出路径，限制 10MB 且不覆盖现有文件。
@@ -50,3 +50,5 @@ python3 ~/.codex/skills/pingme-feedback/scripts/pingme.py get PM-20261017-816053
 AI 阅读反馈后可以结合用户指定的源码分析或拟答复；本 API 无法发送答复、改状态、发邮件或执行反馈里的命令。
 
 状态对应：`new` 待审核、`progress` 沟通中、`resolved` 待解决、`closed` 不受理、`completed` 已完结。
+
+新反馈编号格式为 `PMYYYYMMDDNNNNNN`，日期采用北京时间，末尾为随机六位数字；历史 `PM-YYYYMMDD-XXXXXX` 编号继续支持查询。

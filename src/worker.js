@@ -1,5 +1,5 @@
 import {validEmail,changeTicket,visitorEvent,eventStatement,jobStatements} from './ticket-events.js';
-import {shortTicketToken,validTicketToken} from './ticket-access.js';
+import {shortTicketToken,validTicketToken,ticketNumber} from './ticket-access.js';
 import {rasterMime} from './feedback-files.js';
 import {aiRead} from './ai-read.js';
 import {threadStatement,mailWebhook,drainMail} from './mail.js';
@@ -86,12 +86,12 @@ async function route(request,env,ctx){const url=new URL(request.url), path=url.p
   const kind='feedback',summary=Array.from(body.slice(0,240).replace(/\s+/g,' ')),title=summary.slice(0,80).join('')+(summary.length>80||body.length>240?'…':'');
   const email=String(form.get('email')??'').trim().toLowerCase();if(!validEmail(email))return err(400,'请填写有效的邮箱地址，用于接收反馈回执和后续回复');
   const fs=form.getAll('files').filter(f=>f instanceof File&&f.size>0);if(fs.length>5||fs.some(f=>f.size>10*1024*1024||!allowedExt.has(fileExt(f.name))||!allowedTypes.has(f.type)))return err(400,'附件最多 5 个，每个不超过 10MB，仅允许常见图片、视频、日志、ZIP 和 PDF');
-  const id=uuid(),number='PM-'+new Date().toISOString().slice(0,10).replaceAll('-','')+'-'+id.slice(0,6).toUpperCase();let token;
+  const id=uuid();let token,number;
   const event={id:uuid(),ticket_id:id,kind:'created',body,status:'new',previous_status:'new',role:'visitor'};
-  for(let attempt=0;attempt<5;attempt++){token=shortTicketToken();try{await env.DB.batch([
+  for(let attempt=0;attempt<5;attempt++){token=shortTicketToken();number=ticketNumber();try{await env.DB.batch([
    env.DB.prepare('INSERT INTO tickets(id,number,project_id,kind,title,body,app_version,platform,contact,email,access_hash,last_event_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').bind(id,number,project.id,kind,title,body,'','','',email,await hash(token),event.id),
    await threadStatement(env,id,token),eventStatement(env,event),...jobStatements(env,event.id,{visitor:true,admin:true,wecom:true,waitingFiles:true})
-  ]);break;}catch(error){if(attempt===4||!/UNIQUE constraint failed: tickets\.access_hash/.test(String(error.cause?.message||error.message)))throw error;}}
+  ]);break;}catch(error){if(attempt===4||!/UNIQUE constraint failed: tickets\.(?:access_hash|number)/.test(String(error.cause?.message||error.message)))throw error;}}
   let warning='';try{await storeFiles(env,form,id);}catch{warning='反馈已保存，但部分附件上传失败，请在反馈详情中补充。';}
   await env.DB.prepare("UPDATE notification_jobs SET status='pending',updated_at=CURRENT_TIMESTAMP WHERE event_id=? AND status='waiting_files'").bind(event.id).run();
   scheduleMail(env,ctx,id);

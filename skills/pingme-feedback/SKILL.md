@@ -17,7 +17,7 @@ description: 读取 PingMe 反馈中心的项目、反馈描述、交流记录�
 python3 <skill>/scripts/pingme.py projects
 python3 <skill>/scripts/pingme.py search --project fakenotify --status new --limit 20
 python3 <skill>/scripts/pingme.py search --q 闪退
-python3 <skill>/scripts/pingme.py get PM-20261017-816053
+python3 <skill>/scripts/pingme.py get PM20261021545641
 python3 <skill>/scripts/pingme.py download ATTACHMENT_ID --output /tmp/pingme-debug.log
 ```
 

@@ -60,6 +60,10 @@ test('pagination, full description search, filters and parameter limits are dete
  for(const query of ['limit=51','page=0','limit=NaN','page=1.5','status=oops','updated_after=bad','q='+('x'.repeat(201))])assert.equal((await f.call('/api/ai/feedback?'+query)).status,400,query);
  assert.equal((await (await f.call('/api/ai/feedback?q=%27%20OR%201%3D1')).json()).total,0);
 });
+test('new numeric feedback numbers and legacy numbers remain readable',async()=>{
+ const f=await setup();f.sql.prepare('UPDATE tickets SET number=? WHERE id=?').run('PM20261021545641',f.a);
+ const result=await f.call('/api/ai/feedback/PM20261021545641');assert.equal(result.status,200);assert.equal((await result.json()).ticket.id,f.a);
+});
 test('AI requests are rate limited per key and source',async()=>{
  const f=await setup();
  for(let i=0;i<120;i++)assert.equal((await f.call('/api/ai/projects',{headers:{'cf-connecting-ip':'127.0.0.1'}})).status,200);

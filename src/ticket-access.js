@@ -9,3 +9,10 @@ export function shortTicketToken(){
  }
  return token;
 }
+
+export function ticketNumber(now=new Date()){
+ const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);
+ const date=['year','month','day'].map(type=>parts.find(p=>p.type===type).value).join('');
+ let value;do{value=crypto.getRandomValues(new Uint32Array(1))[0];}while(value>=4294000000);
+ return 'PM'+date+String(value%1000000).padStart(6,'0');
+}

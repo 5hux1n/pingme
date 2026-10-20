@@ -49,7 +49,7 @@ export async function aiRead(request,env,rate){
   ]);
   const total=count.results[0].total;return json({feedback:rows.results,total,page,limit,has_more:page*limit<total});
  }
- const detail=path.match(/^\/api\/ai\/feedback\/(PM-\d{8}-[A-F0-9]{6}|[a-f0-9-]{36})$/);
+ const detail=path.match(/^\/api\/ai\/feedback\/(PM\d{14}|PM-\d{8}-[A-F0-9]{6}|[a-f0-9-]{36})$/);
  if(detail){
   const ticket=await env.DB.prepare(`SELECT ${detailFields} FROM tickets t JOIN projects p ON p.id=t.project_id WHERE (t.number=? OR t.id=?) AND ${access.sql}`).bind(detail[1],detail[1],...access.params).first();
   if(!ticket)return error(404,'反馈不存在或无权读取');

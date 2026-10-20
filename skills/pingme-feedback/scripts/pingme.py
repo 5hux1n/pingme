@@ -29,8 +29,8 @@ def main():
         params={k:getattr(args,k) for k in ['project','status','q','updated_after','page','limit'] if getattr(args,k) is not None}
         path='/api/ai/feedback?'+urllib.parse.urlencode(params)
     elif args.command=='get':
-        identifier=args.feedback.upper() if args.feedback.lower().startswith('pm-') else args.feedback
-        if not re.fullmatch(r'PM-\d{8}-[A-F0-9]{6}|[a-f0-9-]{36}',identifier):parser.error('Expected feedback number or ID')
+        identifier=args.feedback.upper() if args.feedback.lower().startswith('pm') else args.feedback
+        if not re.fullmatch(r'PM\d{14}|PM-\d{8}-[A-F0-9]{6}|[a-f0-9-]{36}',identifier):parser.error('Expected feedback number or ID')
         path='/api/ai/feedback/'+identifier
     elif args.command=='download':
         if not re.fullmatch(r'[a-f0-9-]{36}',args.attachment):parser.error('Expected attachment ID from a feedback detail')
