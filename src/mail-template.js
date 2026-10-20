@@ -6,7 +6,15 @@ const url=value=>{const u=new URL(value);if(!['https:','http:'].includes(u.proto
 export function renderFeedbackMail({heading,projectName,number,status,previousStatus,statusCode,body='',images=[],attachmentNote='',link,admin=false,userEmail='',preview=false}){
  link=url(link);const logo=new URL('/brand/pingme-mail.png',link).href;
  const transition=previousStatus&&previousStatus!==status?previousStatus+' → '+status:status;
- const project=String(projectName||'PingMe'),subject='[PingMe] '+Array.from(project.replace(/[\r\n]+/g,' ')).slice(0,60).join('')+' · 反馈交流';
+ const project=String(projectName||'PingMe'),subjectProject=Array.from(project.replace(/[\r\n]+/g,' ')).slice(0,60).join('');
+ const subjects={
+  '收到新反馈':`[Pingme] 收到一条关于【${subjectProject}】的新反馈。`,
+  '用户补充了反馈':`[Pingme] 收到一条关于【${subjectProject}】的反馈补充。`,
+  '反馈已提交':'[Pingme] 已经收到您的反馈，请等待开发者审核处理',
+  '开发者回复了反馈':`[Pingme] 您反馈的关于【${subjectProject}】的问题，开发者已经答复了！`,
+  '反馈状态更新':`[Pingme] 您有一条关于【${subjectProject}】的反馈被开发者调整了状态，请及时查看。`
+ };
+ const subject=subjects[heading]||subjects['开发者回复了反馈'];
  const replyHint=admin?'直接回复此邮件即可答复用户。':'您可以直接回复此邮件进行补充反馈信息或者提供附件。邮件内容会追加到反馈记录。';
  const commandHint=admin?'需同时更新状态时，在回复首行填写“状态：已完结”。':'';
  const contact=admin&&userEmail?'用户邮箱：'+userEmail:'';
