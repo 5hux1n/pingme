@@ -13,3 +13,11 @@ test('user content and attachment notes are escaped, and contact is role-scoped'
 test('status-only messages have a visible transition and need no placeholder message block',()=>{
  const output=renderFeedbackMail({...sample,heading:'反馈状态更新',status:'已解决',previousStatus:'处理中',statusCode:'resolved',body:''});assert.match(output.text,/处理中 → 已解决/);assert.match(output.html,/处理中 → 已解决/);assert.ok(!output.html.includes('undefined'));assert.ok(!output.html.includes('暂无内容'));
 });
+
+test('inline pictures use CID, constrained dimensions and fluid width without exposing private URLs',()=>{
+ const output=renderFeedbackMail({...sample,images:[{contentId:'feedback-image-0',width:295,height:640}]});
+ assert.ok(output.html.includes('src="cid:feedback-image-0"'));
+ assert.ok(output.html.includes('width="295" height="640"'));
+ assert.ok(output.html.includes('max-width:100%;height:auto;max-height:640px;object-fit:contain'));
+ assert.ok(!output.html.includes('/api/attachments/'));
+});

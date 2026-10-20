@@ -30,9 +30,10 @@ export async function emailContent(env,t,event,audience){
  const heading=event.kind==='created'?(admin?'收到新反馈':'反馈已提交'):event.kind==='status'?'反馈状态更新':admin?'用户补充了反馈':'开发者回复了反馈';
  const original=event.body||'',body=original.slice(0,18000)+(original.length>18000?'\n…（内容较长，请通过查看链接阅读完整记录）':''),status=STATUS[event.status]||event.status;
  const files=(await env.DB.prepare("SELECT a.id,a.name,a.mime,a.bytes,a.object_key FROM attachments a LEFT JOIN messages m ON m.id=a.message_id WHERE a.ticket_id=? AND (a.message_id=? OR (?='created' AND a.message_id IS NULL)) AND (?='admin' OR m.role IS NULL OR m.role<>'internal')").bind(t.id,event.id,event.kind,audience).all()).results;
- const {attachments,omitted}=await mailFiles(env,files);
- const attachmentNote=[attachments.length?`${attachments.length} 个文件已随信附上。`:'',omitted?`另有 ${omitted} 个文件请通过反馈页面查看。`:''].filter(Boolean).join('');
- const content=renderFeedbackMail({heading,projectName:t.project_name,number:t.number,status,previousStatus:STATUS[event.previous_status]||event.previous_status,statusCode:event.status,body,attachmentNote,link,admin,userEmail:admin?t.email:''});
+ const {attachments,images,omitted}=await mailFiles(env,files);
+ const fileCount=attachments.length-images.length;
+ const attachmentNote=[fileCount?`${fileCount} 个文件已随信附上。`:'',omitted?`另有 ${omitted} 个文件请通过反馈页面查看。`:''].filter(Boolean).join('');
+ const content=renderFeedbackMail({heading,projectName:t.project_name,number:t.number,status,previousStatus:STATUS[event.previous_status]||event.previous_status,statusCode:event.status,body,images,attachmentNote,link,admin,userEmail:admin?t.email:''});
  return {from:env.MAIL_FROM||'PingMe <feedback@pingme.pm>',to:admin?adminAddresses(env):[t.email],reply_to:await replyAddress(env,t.id,audience),...content,...(attachments.length?{attachments}:{}),headers:{'Auto-Submitted':'auto-generated','X-Auto-Response-Suppress':'All',...(/^<[^<>\s]{1,250}>$/.test(parent||'')?{'In-Reply-To':parent,'References':parent}:{})}};
 }
 export async function verifyWebhook(body,headers,secret,now=Date.now()){
