@@ -47,15 +47,16 @@ async function storeFiles(env,form,ticketId,messageId=null){const files=form.get
 async function getTicket(env,token){if(!validTicketToken(token))return null;return env.DB.prepare('SELECT t.*,p.name project_name,p.slug project_slug FROM tickets t JOIN projects p ON p.id=t.project_id WHERE t.access_hash=?').bind(await hash(token)).first();}
 const ticketListFields="t.id,t.number,t.kind,CASE WHEN length(t.title)>200 THEN substr(t.title,1,200)||'…' ELSE t.title END title,t.status,t.created_at,t.updated_at,p.name project_name,p.slug project_slug";
 async function adminSnapshot(env){
- const [projects,groups,tickets,about,total]=await env.DB.batch([
+ const [projects,groups,tickets,about,total,feedbackProjects]=await env.DB.batch([
   env.DB.prepare(`SELECT p.*,COALESCE(c.name,'其他项目') category_name FROM projects p LEFT JOIN project_categories c ON c.id=p.category ORDER BY ${projectOrder}`),
   env.DB.prepare('SELECT id,name,description,sort_order FROM project_categories ORDER BY sort_order,name,id'),
   env.DB.prepare(`SELECT ${ticketListFields} FROM tickets t JOIN projects p ON p.id=t.project_id ORDER BY t.updated_at DESC,t.id DESC LIMIT 50`),
   env.DB.prepare("SELECT value,version FROM site_settings WHERE key='about'"),
-  env.DB.prepare('SELECT COUNT(*) total FROM tickets')
+  env.DB.prepare('SELECT COUNT(*) total FROM tickets'),
+  env.DB.prepare(`SELECT p.slug,p.name FROM projects p LEFT JOIN project_categories c ON c.id=p.category WHERE EXISTS(SELECT 1 FROM tickets t WHERE t.project_id=p.id) ORDER BY ${projectOrder}`)
  ]);
  const config=about.results[0];
- return {ticketTotal:total.results[0].total,projects:projects.results.map(p=>({...p,image_url:withImage(p).image_url})),categories:groups.results,tickets:tickets.results,about:{personal:config?JSON.parse(config.value):structuredClone(aboutDefaults),version:config?.version||0}};
+ return {feedbackProjects:feedbackProjects.results,ticketTotal:total.results[0].total,projects:projects.results.map(p=>({...p,image_url:withImage(p).image_url})),categories:groups.results,tickets:tickets.results,about:{personal:config?JSON.parse(config.value):structuredClone(aboutDefaults),version:config?.version||0}};
 }
 function scheduleMail(env,ctx,ticketId=null){const task=drainMail(env,{ticketId}).catch(()=>console.error('邮件队列暂未处理完成，将由定时任务重试'));if(ctx?.waitUntil)ctx.waitUntil(task);else return task;}
 async function route(request,env,ctx){const url=new URL(request.url), path=url.pathname,method=request.method;
@@ -149,11 +150,12 @@ async function route(request,env,ctx){const url=new URL(request.url), path=url.p
   const status=clean(url.searchParams.get('status'),20),project=clean(url.searchParams.get('project'),50),q=clean(url.searchParams.get('q'),100);
   const page=Math.max(1,Math.floor(Number(url.searchParams.get('page'))||1)),limit=Math.min(100,Math.max(1,Math.floor(Number(url.searchParams.get('limit'))||50)));
   const where="(?='' OR t.status=?) AND (?='' OR p.slug=?) AND (?='' OR instr(lower(t.title),lower(?))>0 OR instr(lower(t.number),lower(?))>0 OR instr(lower(t.body),lower(?))>0)",params=[status,status,project,project,q,q,q,q];
-  const [rows,count]=await env.DB.batch([
+  const [rows,count,feedbackProjects]=await env.DB.batch([
    env.DB.prepare(`SELECT ${ticketListFields} FROM tickets t JOIN projects p ON p.id=t.project_id WHERE ${where} ORDER BY t.updated_at DESC,t.id DESC LIMIT ? OFFSET ?`).bind(...params,limit,(page-1)*limit),
-   env.DB.prepare(`SELECT COUNT(*) total FROM tickets t JOIN projects p ON p.id=t.project_id WHERE ${where}`).bind(...params)
+   env.DB.prepare(`SELECT COUNT(*) total FROM tickets t JOIN projects p ON p.id=t.project_id WHERE ${where}`).bind(...params),
+   env.DB.prepare(`SELECT p.slug,p.name FROM projects p LEFT JOIN project_categories c ON c.id=p.category WHERE EXISTS(SELECT 1 FROM tickets t WHERE t.project_id=p.id) ORDER BY ${projectOrder}`)
   ]);
-  return json({tickets:rows.results,total:count.results[0].total,page,limit});
+  return json({tickets:rows.results,total:count.results[0].total,page,limit,feedbackProjects:feedbackProjects.results});
  }
  const adt=path.match(/^\/api\/admin\/tickets\/([a-f0-9-]{36})(?:\/(reply|notify))?$/);
  if(adt){const t=await env.DB.prepare('SELECT t.*,p.name project_name,p.slug project_slug FROM tickets t JOIN projects p ON p.id=t.project_id WHERE t.id=?').bind(adt[1]).first();if(!t)return err(404,'反馈不存在');if(method==='GET'&&!adt[2]){const [messageRows,fileRows,notification]=await env.DB.batch([
