@@ -1,3 +1,4 @@
+import {STATUS} from './ticket-events.js';
 const json=(data,status=200,headers={})=>Response.json(data,{status,headers:{'cache-control':'private, no-store','x-content-type-options':'nosniff',...headers}});
 const error=(status,message,headers)=>json({error:message},status,headers);
 const sha=async value=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))].map(x=>x.toString(16).padStart(2,'0')).join('');
@@ -35,7 +36,7 @@ export async function aiRead(request,env,rate){
  }
  if(path==='/api/ai/feedback'){
   const q=url.searchParams.get('q')||'',project=url.searchParams.get('project')||'',status=url.searchParams.get('status')||'',after=url.searchParams.get('updated_after')||'';
-  if(q.length>200||project&&!slug.test(project)||status&&!['new','progress','resolved','closed'].includes(status))return error(400,'搜索条件无效');
+  if(q.length>200||project&&!slug.test(project)||status&&!Object.hasOwn(STATUS,status))return error(400,'搜索条件无效');
   const page=Number(url.searchParams.get('page')||1),limit=Number(url.searchParams.get('limit')||20);
   if(!Number.isSafeInteger(page)||page<1||page>10000||!Number.isSafeInteger(limit)||limit<1||limit>50)return error(400,'page 为 1–10000，limit 为 1–50 的整数');
   if(after&&(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(after)||!Number.isFinite(Date.parse(after))))return error(400,'updated_after 必须为 UTC ISO 时间');

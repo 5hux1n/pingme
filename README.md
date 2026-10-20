@@ -87,7 +87,7 @@ npm test
 
 在 Resend 验证发件域名并启用收信，按域名控制台提供的记录配置 DNS。将 RESEND_API_KEY、RESEND_WEBHOOK_SECRET、MAIL_FROM、MAIL_DOMAIN、MAIL_ADMIN_TO、MAIL_SIGNING_SECRET 设置为 Worker secrets。MAIL_SIGNING_SECRET 使用独立随机长字符串，后续部署保持稳定。
 
-创建指向 `/api/mail/webhook` 的 Resend webhook，订阅 email.received、email.delivered、email.bounced、email.complained、email.failed。保留每分钟 cron 以重试通知及处理来信。收到的回复须通过发件人邮箱及服务端域名认证检查；不能仅凭反馈编号归档。管理员首行可写 `状态：已解决`，将回复与状态合并处理。
+创建指向 `/api/mail/webhook` 的 Resend webhook，订阅 email.received、email.delivered、email.bounced、email.complained、email.failed。保留每分钟 cron 以重试通知及处理来信。收到的回复须通过发件人邮箱及服务端域名认证检查；不能仅凭反馈编号归档。管理员首行可写 `状态：待解决`，将回复与状态合并处理。
 
 ## AI 读取反馈
 

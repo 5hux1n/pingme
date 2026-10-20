@@ -1,4 +1,4 @@
-export const STATUS={new:'待处理',progress:'处理中',resolved:'已解决',closed:'已关闭'};
+export const STATUS={new:'待审核',progress:'沟通中',resolved:'待解决',closed:'不受理',completed:'已完结'};
 export const validEmail=value=>typeof value==='string'&&value.length<=254&&/^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?(?:\.[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?)+$/i.test(value)&&!/[\r\n]/.test(value);
 export function jobStatements(env,id,{visitor=false,admin=false,wecom=false,waitingFiles=false}={}){
  return [...(visitor?[['email','visitor']]:[]),...(admin?[['email','admin']]:[]),...(wecom?[['wecom','admin']]:[])].map(([channel,audience])=>env.DB.prepare('INSERT OR IGNORE INTO notification_jobs(id,event_id,channel,audience,status) SELECT ?,id,?,?,? FROM ticket_events WHERE id=?').bind(id+':'+channel+':'+audience,channel,audience,waitingFiles?'waiting_files':'pending',id));

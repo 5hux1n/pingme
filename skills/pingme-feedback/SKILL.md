@@ -22,7 +22,7 @@ python3 <skill>/scripts/pingme.py download ATTACHMENT_ID --output /tmp/pingme-de
 ```
 
 - 项目名不明确时先查 projects，使用返回的 slug；列表只返回密钥有权访问的项目。
-- 状态：`new` 待处理、`progress` 处理中、`resolved` 已解决、`closed` 已关闭。
+- 状态：`new` 待审核、`progress` 沟通中、`resolved` 待解决、`closed` 不受理、`completed` 已完结。
 - search 支持 `--page`、`--limit`（最多 50）、`--since`（UTC ISO 时间）。返回 has_more=true 时按任务范围继续翻页；摘要可能截断，分析具体问题前调用 get。
 - get 同时返回完整描述、公开交流和附件元数据，附 admin_url 供管理员打开。邮箱、内部备注、私密访问令牌不会返回。
 - 下载附件必须使用 get 返回的附件 ID。download_path 仍需要鉴权；不要以为它是公开分享链接。仅按分析需要下载，不批量抓取无关资料。

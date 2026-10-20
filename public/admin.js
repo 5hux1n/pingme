@@ -1,11 +1,11 @@
 import {formatBeijingTime} from './time.js?v=20261019-beijing-time';
 import {feedbackFiles} from './feedback-media.js?v=20261019-feedback-files';
 import {processProjectImage} from './admin-image.js?v=20261019-reply-options';
-const STATUS={new:'待处理',progress:'处理中',resolved:'已解决',closed:'已关闭'};
+const STATUS={new:'待审核',progress:'沟通中',resolved:'待解决',closed:'不受理',completed:'已完结'};
 const REPLY_PRESETS=[
- {label:'已处理',status:'resolved',body:'此条反馈已处理，状态已更新为“已解决”。如仍有问题，欢迎继续追加说明。感谢您的支持！'},
- {label:'列入更新计划',status:'progress',body:'感谢您的反馈，相关问题已列入更新计划。后续进展请留意邮件通知或官网更新日志。'},
- {label:'信息不足',status:'closed',body:'感谢您的反馈。由于现有信息不足，目前暂时无法复现问题，此条反馈先关闭处理。请补充手机型号、系统与 App／插件版本、复现步骤，以及截图或日志等信息。您可以直接回复邮件或在反馈页面追加说明，我们会继续排查。'}
+ {label:'已完结',status:'completed',body:'感谢您的反馈。如仍有问题，欢迎继续追加说明。感谢您的支持！'},
+ {label:'列入更新计划',status:'resolved',body:'感谢您的反馈，相关问题已列入更新计划。后续进展请留意邮件通知或官网更新日志。'},
+ {label:'需要补充信息',status:'progress',body:'感谢您的反馈。现有信息暂时不足以复现问题，请补充手机型号、系统与 App／插件版本、复现步骤，以及截图或日志等信息。您可以直接回复邮件或在反馈页面追加说明，我们会继续排查。'}
 ];
 const ABOUT=[['profile','个人资料'],['contacts','联系方式'],['communities','社交账号'],['sites','个人站点'],['support','支持开发']];
 const TITLES={contacts:'contactTitle',communities:'communityTitle',sites:'sitesTitle',support:'supportTitle'};
@@ -24,7 +24,7 @@ export function createAdmin({root,api,esc,onCatalogChanged=()=>{}}){
  const statusTag=status=>`<span class="a-status s-${esc(status)}">${esc(STATUS[status]||status)}</span>`;
  const date=value=>formatBeijingTime(value);
  const routeUrl=value=>'/admin#'+value;
- function styles(){if(document.getElementById('adminStyles'))return;const link=document.createElement('link');link.id='adminStyles';link.rel='stylesheet';link.href='/admin.css?v=20261019-nav-underline';document.head.append(link);}
+ function styles(){if(document.getElementById('adminStyles'))return;const link=document.createElement('link');link.id='adminStyles';link.rel='stylesheet';link.href='/admin.css?v=20261021-ticket-status';document.head.append(link);}
  function notify(message,error=false){const box=$('#adminNotice');if(!box)return;box.hidden=false;box.className='a-notice'+(error?' is-error':'');box.setAttribute('role',error?'alert':'status');box.textContent=message;}
  function safeLeave(){if(busy){notify('正在保存，请稍候。');return false;}return !dirty||window.confirm('修改尚未保存，是否放弃修改？');}
  function clear(){authenticated=false;data=null;ticket=null;aboutDraft=null;dirty=false;tickets.clear();controller?.abort();view++;}

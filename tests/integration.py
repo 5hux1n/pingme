@@ -49,7 +49,7 @@ short=multipart('/tickets',{'project':slug,'body':'字','email':'private-test@ex
 assert call(short['url'],anonymous=True)['ticket']['title']=='字'
 multipart('/tickets',dict(fields,email=''),expected=400,anonymous=True)
 multipart('/tickets',dict(fields,body=''),expected=400,anonymous=True)
-for status in ('progress','resolved','closed','new'):
+for status in ('progress','resolved','closed','completed','new'):
  saved=call('/admin/tickets/'+id,'PATCH',{'status':status});assert saved['ticket']['status']==status
  assert call('/admin/tickets/'+id)['ticket']['status']==status
 call('/admin/tickets/'+id,'PATCH',{'status':'invalid'},400)

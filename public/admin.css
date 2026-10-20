@@ -44,3 +44,8 @@ body:has(.pm-admin){min-width:0}
 .a-reply-presets{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 14px;font-size:12px}.a-reply-presets>span{color:var(--a-muted);margin-right:3px}.pm-admin .a-reply-presets>button:not(.a-text-button){padding:5px 10px;min-height:30px;font-size:12px;background:#fff}.a-reply-presets [hidden]{display:none!important}
 
 .pm-admin .a-nav a,.pm-admin .a-nav a:hover{text-decoration:none}
+
+/* Keep all five workflow states and the all filter visible on phones. */
+.pm-admin .a-status.s-resolved{background:#fdf3e3;color:#82601e}
+.pm-admin .a-status.s-completed{background:#edf6ef;color:#376447}
+@media(max-width:700px){.pm-admin .a-inbox-status{gap:0;justify-content:space-between;overflow:visible}.pm-admin .a-inbox-status button{font-size:12px;padding-left:0;padding-right:0;flex:0 0 auto;white-space:nowrap}}

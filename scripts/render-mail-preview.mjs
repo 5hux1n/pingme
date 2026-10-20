@@ -3,12 +3,12 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 const out=process.argv[2]||join(tmpdir(),'pingme-mail-preview');await mkdir(out,{recursive:true});
-const base={projectName:'闲鱼助手',number:'PM-20261019-DEMO01',status:'处理中',previousStatus:'处理中',statusCode:'progress',link:'https://pingme.pm/t/Ab7kP2mN9xQ4',attachments:[],userEmail:'user@example.com',preview:true};
+const base={projectName:'闲鱼助手',number:'PM-20261019-DEMO01',status:'沟通中',previousStatus:'沟通中',statusCode:'progress',link:'https://pingme.pm/t/Ab7kP2mN9xQ4',attachments:[],userEmail:'user@example.com',preview:true};
 const variants={
  'admin-reply':{heading:'用户补充了反馈',body:'插件版本：V3.1.2+2（arm64 / arm64e）\n闪退未再出现，目前可以正常使用。',admin:true,link:'https://pingme.pm/admin'},
- 'visitor-reply':{heading:'开发者回复了反馈',body:'此条反馈已处理，状态已更新为“已解决”。如仍有问题，欢迎继续追加说明。感谢您的支持！',status:'已解决',statusCode:'resolved',admin:false},
- 'status-only':{heading:'反馈状态更新',body:'',status:'已关闭',statusCode:'closed',admin:false},
- 'created':{heading:'反馈已提交',body:'已收到您的反馈，后续答复会发送到此邮箱。\n\n您提交的内容：\n手机型号：iPhone 7 Plus\n系统版本：iOS 15.8.8\n\n进入首页后出现闪退，希望协助排查。',status:'待处理',previousStatus:'待处理',statusCode:'new',admin:false}
+ 'visitor-reply':{heading:'开发者回复了反馈',body:'如仍有问题，欢迎继续追加说明。感谢您的支持！',status:'已完结',statusCode:'completed',admin:false},
+ 'status-only':{heading:'反馈状态更新',body:'',status:'不受理',statusCode:'closed',admin:false},
+ 'created':{heading:'反馈已提交',body:'已收到您的反馈，后续答复会发送到此邮箱。\n\n您提交的内容：\n手机型号：iPhone 7 Plus\n系统版本：iOS 15.8.8\n\n进入首页后出现闪退，希望协助排查。',status:'待审核',previousStatus:'待审核',statusCode:'new',admin:false}
 };
 for(const [name,variant] of Object.entries(variants)){
  const result=renderFeedbackMail({...base,...variant});

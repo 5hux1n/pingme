@@ -32,7 +32,7 @@ export async function emailContent(env,t,event,audience){
  const files=(await env.DB.prepare("SELECT a.id,a.name,a.mime,a.bytes,a.object_key FROM attachments a LEFT JOIN messages m ON m.id=a.message_id WHERE a.ticket_id=? AND (a.message_id=? OR (?='created' AND a.message_id IS NULL)) AND (?='admin' OR m.role IS NULL OR m.role<>'internal')").bind(t.id,event.id,event.kind,audience).all()).results;
  const {attachments,images,omitted}=await mailFiles(env,files);
  const fileCount=attachments.length-images.length;
- const attachmentNote=[fileCount?`${fileCount} 个文件已随信附上。`:'',omitted?`另有 ${omitted} 个文件请通过反馈页面查看。`:''].filter(Boolean).join('');
+ const attachmentNote=[fileCount?`包含附件数量：${fileCount} 个。`:'',omitted?`另有 ${omitted} 个文件请通过反馈页面查看。`:''].filter(Boolean).join('');
  const content=renderFeedbackMail({heading,projectName:t.project_name,number:t.number,status,previousStatus:STATUS[event.previous_status]||event.previous_status,statusCode:event.status,body,images,attachmentNote,link,admin,userEmail:admin?t.email:''});
  return {from:env.MAIL_FROM||'PingMe <feedback@pingme.pm>',to:admin?adminAddresses(env):[t.email],reply_to:await replyAddress(env,t.id,audience),...content,...(attachments.length?{attachments}:{}),headers:{'Auto-Submitted':'auto-generated','X-Auto-Response-Suppress':'All',...(/^<[^<>\s]{1,250}>$/.test(parent||'')?{'In-Reply-To':parent,'References':parent}:{})}};
 }
@@ -63,7 +63,7 @@ export function stripReply(input){
  return result.join('\n').trim();
 }
 export function htmlText(html){return String(html||'').replace(/<(script|style|blockquote)\b[^>]*>[\s\S]*?<\/\1\s*>/gi,'').replace(/<(?:br\s*\/?|\/p|\/div|\/tr|\/li)>/gi,'\n').replace(/<[^>]+>/g,'').replace(/&(?:nbsp|amp|lt|gt|quot|apos);|&#(?:x[0-9a-f]+|\d+);/gi,value=>{const named={'&nbsp;':' ','&amp;':'&','&lt;':'<','&gt;':'>','&quot;':'"','&apos;':"'"};if(named[value.toLowerCase()])return named[value.toLowerCase()];const n=value.toLowerCase().startsWith('&#x')?parseInt(value.slice(3),16):parseInt(value.slice(2),10);return n>=0&&n<=0x10ffff?String.fromCodePoint(n):'';}).trim();}
-export function parseAdminReply(body){const match=body.match(/^状态\s*[:：]\s*(待处理|处理中|已解决|已关闭)\s*(?:\n|$)/);return match?{status:Object.keys(STATUS).find(key=>STATUS[key]===match[1]),body:body.slice(match[0].length).trim()}:{body};}
+export function parseAdminReply(body){const match=body.match(/^状态\s*[:：]\s*(待审核|沟通中|待解决|不受理|已完结)\s*(?:\n|$)/);return match?{status:Object.keys(STATUS).find(key=>STATUS[key]===match[1]),body:body.slice(match[0].length).trim()}:{body};}
 const fileExtensions=new Set(['png','jpg','jpeg','webp','gif','heic','mp4','mov','webm','txt','log','crash','ips','json','zip','pdf']);
 async function inboundFiles(env,email,ticketId,mid){
  if(!email.attachments?.length)return {statements:[],note:''};const result=await resend(env,'/emails/receiving/'+email.id+'/attachments'),files=result.data||[],statements=[],skipped=[];

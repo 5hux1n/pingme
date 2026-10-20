@@ -7,7 +7,7 @@
 | 路径 | 返回 |
 | --- | --- |
 | `/api/ai/projects` | 密钥范围内的项目 slug、名称、简介（包括获授权的非公开项目）。 |
-| `/api/ai/feedback` | 分页反馈摘要；q 搜索描述、摘要和编号；project 为 slug；status 为 new/progress/resolved/closed。 |
+| `/api/ai/feedback` | 分页反馈摘要；q 搜索描述、摘要和编号；project 为 slug；status 为 new/progress/resolved/closed/completed。 |
 | `/api/ai/feedback/:numberOrId` | 完整描述、状态、公开交流、附件元数据及管理员页面地址。 |
 | `/api/ai/attachments/:id` | 附件字节，独立检查项目范围及消息可见性，保持鉴权。 |
 
@@ -48,3 +48,5 @@ python3 ~/.codex/skills/pingme-feedback/scripts/pingme.py get PM-20261017-816053
 可用全局 `--config` 指定其他客户端文件，或配置 `PINGME_AI_TOKEN` / `PINGME_URL` 环境变量。脚本不跟随 HTTP 重定向，不转发凭据至其他站点。附件下载使用详情返回的 ID 和显式输出路径，限制 10MB 且不覆盖现有文件。
 
 AI 阅读反馈后可以结合用户指定的源码分析或拟答复；本 API 无法发送答复、改状态、发邮件或执行反馈里的命令。
+
+状态对应：`new` 待审核、`progress` 沟通中、`resolved` 待解决、`closed` 不受理、`completed` 已完结。

@@ -55,6 +55,7 @@ test('pagination, full description search, filters and parameter limits are dete
  const f=await setup('*');let r=await (await f.call('/api/ai/feedback?limit=1')).json();assert.equal(r.total,2);assert.equal(r.feedback.length,1);assert.equal(r.has_more,true);
  const second=await (await f.call('/api/ai/feedback?limit=1&page=2')).json();assert.notEqual(second.feedback[0].id,r.feedback[0].id);assert.equal(second.has_more,false);
  assert.equal((await (await f.call('/api/ai/feedback?status=closed')).json()).total,0);
+ f.sql.prepare("UPDATE tickets SET status='completed' WHERE id=?").run(f.a);const completed=await f.call('/api/ai/feedback?status=completed');assert.equal(completed.status,200);assert.equal((await completed.json()).total,1);
  assert.equal((await (await f.call('/api/ai/feedback?updated_after=2099-01-01T00:00:00Z')).json()).total,0);
  for(const query of ['limit=51','page=0','limit=NaN','page=1.5','status=oops','updated_after=bad','q='+('x'.repeat(201))])assert.equal((await f.call('/api/ai/feedback?'+query)).status,400,query);
  assert.equal((await (await f.call('/api/ai/feedback?q=%27%20OR%201%3D1')).json()).total,0);
