@@ -20,7 +20,7 @@ export const personal = {
     { platform: '博客', value: 'shuxin.goforit.si', icon: 'rss', href: 'https://shuxin.goforit.si' }
   ],
   support: [
-    { platform: '微信赞赏', value: '查看赞赏码', icon: 'wechat', qr: '/about/wechat-code.png', scanner: '微信', download: 'Junhong-微信赞赏码.png' },
+    { platform: '微信', value: '查看赞赏码', icon: 'wechat', qr: '/about/wechat-code.png', scanner: '微信', download: 'Junhong-微信赞赏码.png' },
     { platform: '支付宝', value: '查看收款码', icon: 'alipay', qr: '/about/alipay-code.png', scanner: '支付宝', download: 'Junhong-支付宝收款码.png' },
     { platform: '币安 Pay', value: '查看收款码', icon: 'binance', qr: '/about/binance-pay-code.png', scanner: '币安 App', download: 'Junhong-币安Pay收款码.png' },
     { platform: '欧易 Pay', value: '查看收款码', icon: 'okx', qr: '/about/okx-pay-code.png', scanner: '欧易 App', download: 'Junhong-欧易Pay收款码.png' },
