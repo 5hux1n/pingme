@@ -9,7 +9,7 @@ async function api(path,opts={}){const r=await fetch('/api'+path,{credentials:'s
 const go=p=>{if(location.pathname.startsWith('/admin')&&!admin.leave())return;history.pushState({},'',p);render()};
 window.addEventListener('popstate',()=>render());
 const brand=()=>`<span class="brand-logo"><img class="brand-light" src="/brand/pingme-wordmark.svg" alt="pingme." width="112" height="50"/></span>`;
-function nav(){return `<div class="shell"><header class="nav"><a href="/" class="logo" data-link aria-label="PingMe 首页">${brand()}</a><div class="navright"><a href="/" data-link>项目</a><a href="/about" data-link class="quiet">关于</a></div></header></div>`;}
+function nav(){return `<div class="shell"><header class="nav"><a href="/" class="logo" data-link aria-label="PingMe 首页">${brand()}</a><div class="navright"><a href="/" data-link>首页</a><a href="/about" data-link class="quiet">联系</a><a href="https://shuxin.my/" target="_blank" rel="noopener noreferrer" class="quiet">博客</a></div></header></div>`;}
 function layout(html){root.innerHTML=(html.includes('id="management"')?'':nav())+html;root.querySelectorAll('[data-link]').forEach(a=>a.onclick=e=>{e.preventDefault();go(new URL(a.href).pathname)});}
 
 const glyph=p=>p.image_url?`<img class="glyph project-icon" src="${esc(p.image_url)}" alt="" width="44" height="44" decoding="async"/>`:`<span class="glyph" style="background:var(--primary)">${esc(p.name?.slice(0,1)||'P')}</span>`;
