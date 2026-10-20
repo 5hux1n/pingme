@@ -3,9 +3,8 @@ import {feedbackFiles} from './feedback-media.js?v=20261019-feedback-files';
 import {processProjectImage} from './admin-image.js?v=20261019-reply-options';
 const STATUS={new:'待审核',progress:'沟通中',resolved:'待解决',closed:'不受理',completed:'已完结'};
 const REPLY_PRESETS=[
- {label:'已完结',status:'completed',body:'感谢您的反馈。如仍有问题，欢迎继续追加说明。感谢您的支持！'},
- {label:'列入更新计划',status:'resolved',body:'感谢您的反馈，相关问题已列入更新计划。后续进展请留意邮件通知或官网更新日志。'},
- {label:'需要补充信息',status:'progress',body:'感谢您的反馈。现有信息暂时不足以复现问题，请补充手机型号、系统与 App／插件版本、复现步骤，以及截图或日志等信息。您可以直接回复邮件或在反馈页面追加说明，我们会继续排查。'}
+ {label:'已采纳列入开发计划',status:'resolved',body:'感谢您的反馈，您提出的问题或建议已列入后续更新计划，具体完成时间暂未确定。有新进展时会通过邮件通知，您也可以留意官网更新日志。感谢您的耐心与支持！'},
+ {label:'已完成该反馈内容',status:'completed',body:'感谢您的反馈，相关问题已完成处理，请更新至最新版本后确认。如仍有异常，或实际效果与预期不符，欢迎直接回复此邮件或在反馈页面继续补充。感谢您的支持！'}
 ];
 const ABOUT=[['profile','个人资料'],['contacts','联系方式'],['communities','社交账号'],['sites','个人站点'],['support','支持开发']];
 const TITLES={contacts:'contactTitle',communities:'communityTitle',sites:'sitesTitle',support:'supportTitle'};
@@ -24,7 +23,7 @@ export function createAdmin({root,api,esc,onCatalogChanged=()=>{}}){
  const statusTag=status=>`<span class="a-status s-${esc(status)}">${esc(STATUS[status]||status)}</span>`;
  const date=value=>formatBeijingTime(value);
  const routeUrl=value=>'/admin#'+value;
- function styles(){if(document.getElementById('adminStyles'))return;const link=document.createElement('link');link.id='adminStyles';link.rel='stylesheet';link.href='/admin.css?v=20261021-ticket-status';document.head.append(link);}
+ function styles(){if(document.getElementById('adminStyles'))return;const link=document.createElement('link');link.id='adminStyles';link.rel='stylesheet';link.href='/admin.css?v=20261021-preset-checks';document.head.append(link);}
  function notify(message,error=false){const box=$('#adminNotice');if(!box)return;box.hidden=false;box.className='a-notice'+(error?' is-error':'');box.setAttribute('role',error?'alert':'status');box.textContent=message;}
  function safeLeave(){if(busy){notify('正在保存，请稍候。');return false;}return !dirty||window.confirm('修改尚未保存，是否放弃修改？');}
  function clear(){authenticated=false;data=null;ticket=null;aboutDraft=null;dirty=false;tickets.clear();controller?.abort();view++;}
@@ -88,14 +87,24 @@ export function createAdmin({root,api,esc,onCatalogChanged=()=>{}}){
  }
  function showTicket(){
   const t=ticket.ticket;
-  $('#adminContent').innerHTML=`<article class="a-ticket-detail"><div class="a-detail-meta"><span style="display:inline-flex;align-items:center;gap:5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>${esc(t.project_name)}</span><span>${esc(t.number)}</span><time>${esc(date(t.created_at))}</time></div><h2>${t.kind==='feedback'?'反馈内容':esc(t.title)}</h2><p class="a-ticket-body">${esc(t.body)}</p>${feedbackFiles(ticket.attachments.filter(f=>!f.message_id))}<dl class="a-properties">${[['应用版本',t.app_version],['操作系统',t.platform],['邮箱',t.email],['其他联系方式',t.contact]].filter(([,v])=>v).map(([l,v])=>`<div><dt>${l}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl><div class="a-status-edit"><label class="a-status-label" for="ticketStatus">处理状态</label><div class="a-status-controls"><select id="ticketStatus" name="ticketStatus">${Object.entries(STATUS).map(([v,l])=>opt(v,l,t.status)).join('')}</select><span id="statusSaved" role="status"></span></div></div><section class="a-conversation"><h3>交流记录</h3><div id="ticketMessages">${conversation(ticket.messages)}</div></section><form id="ticketReply" class="admin-edit"><h3>回复</h3><div class="a-reply-presets" role="group" aria-label="快捷答复"><span>快捷答复</span>${REPLY_PRESETS.map((p,i)=>`<button type="button" data-reply-preset="${i}" title="填入答复并选择${STATUS[p.status]}，保存后生效">${p.label}</button>`).join('')}<button type="button" id="undoReplyPreset" class="a-text-button" hidden>撤销填入</button></div>${area('body','回复内容（选填）','')}<div class="a-form-footer">${check('suppress_email','不发送邮件通知',false)}<button class="primary" id="saveTicketChanges" type="submit">保存状态</button></div><p id="replySaved" role="status"></p></form></article>`;
+  $('#adminContent').innerHTML=`<article class="a-ticket-detail"><div class="a-detail-meta"><span style="display:inline-flex;align-items:center;gap:5px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>${esc(t.project_name)}</span><span>${esc(t.number)}</span><time>${esc(date(t.created_at))}</time></div><h2>${t.kind==='feedback'?'反馈内容':esc(t.title)}</h2><p class="a-ticket-body">${esc(t.body)}</p>${feedbackFiles(ticket.attachments.filter(f=>!f.message_id))}<dl class="a-properties">${[['应用版本',t.app_version],['操作系统',t.platform],['邮箱',t.email],['其他联系方式',t.contact]].filter(([,v])=>v).map(([l,v])=>`<div><dt>${l}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl><div class="a-status-edit"><label class="a-status-label" for="ticketStatus">处理状态</label><div class="a-status-controls"><select id="ticketStatus" name="ticketStatus">${Object.entries(STATUS).map(([v,l])=>opt(v,l,t.status)).join('')}</select><span id="statusSaved" role="status"></span></div></div><section class="a-conversation"><h3>交流记录</h3><div id="ticketMessages">${conversation(ticket.messages)}</div></section><form id="ticketReply" class="admin-edit"><h3>回复</h3><div class="a-reply-presets" role="group" aria-label="快捷答复">${REPLY_PRESETS.map((p,i)=>`<label class="a-check"><input type="checkbox" data-reply-preset="${i}"><span>${p.label}</span></label>`).join('')}</div>${area('body','回复内容（选填）','')}<div class="a-form-footer">${check('suppress_email','不发送邮件通知',false)}<button class="primary" id="saveTicketChanges" type="submit">保存状态</button></div><p id="replySaved" role="status"></p></form></article>`;
   const statusControl=$('[name="ticketStatus"]'),form=$('#ticketReply'),save=$('#saveTicketChanges');
   function draftChanged(){const hasReply=!!form.elements.body.value.trim(),changed=statusControl.value!==ticket.ticket.status;dirty=hasReply||changed;save.disabled=!dirty;save.textContent=hasReply?(form.elements.suppress_email.checked?'保存答复':'发送并保存'):'保存状态';$('#statusSaved').textContent=changed?'尚未保存':'';}
   statusControl.onchange=draftChanged;form.oninput=draftChanged;draftChanged();
-  let presetUndo;
-  $$('[data-reply-preset]').forEach(button=>button.onclick=()=>{const preset=REPLY_PRESETS[Number(button.dataset.replyPreset)];presetUndo={body:form.elements.body.value,status:statusControl.value};form.elements.body.value=preset.body;statusControl.value=preset.status;$('#undoReplyPreset').hidden=false;draftChanged();form.elements.body.focus();});
-  $('#undoReplyPreset').onclick=()=>{if(!presetUndo)return;form.elements.body.value=presetUndo.body;statusControl.value=presetUndo.status;presetUndo=null;$('#undoReplyPreset').hidden=true;draftChanged();form.elements.body.focus();};
-  form.onsubmit=e=>{e.preventDefault();const body=form.elements.body.value.trim(),status=statusControl.value;if(!body&&status===ticket.ticket.status)return;statusControl.disabled=true;act(e.submitter,async()=>{const result=await request('/admin/tickets/'+t.id+'/reply',json({body,status,suppress_email:form.elements.suppress_email.checked,revision:ticket.ticket.revision}));updateCachedTicket(result.ticket);ticket.messages=result.messages;$('#ticketMessages').innerHTML=conversation(result.messages);form.reset();presetUndo=null;$('#undoReplyPreset').hidden=true;statusControl.value=result.ticket.status;dirty=false;$('#statusSaved').textContent='状态已保存';$('#replySaved').textContent=result.changed?(result.emailQueued?(body?'已回复并通知':'已更新并通知'):result.emailSuppressed?(body?'已回复，未通知':'已更新，未通知'):(body?'已回复':'已更新')):'无需保存';save.textContent='保存状态';}).then(()=>{statusControl.disabled=false;if(!dirty){save.textContent='保存状态';save.disabled=true;}});};
+  let presetUndo=null;
+  const presetChecks=$$('[data-reply-preset]');
+  presetChecks.forEach(input=>input.onchange=()=>{
+   if(input.checked){
+    if(!presetUndo)presetUndo={body:form.elements.body.value,status:statusControl.value};
+    const preset=REPLY_PRESETS[Number(input.dataset.replyPreset)];
+    presetChecks.forEach(other=>{other.checked=other===input;});
+    form.elements.body.value=preset.body;statusControl.value=preset.status;
+   }else if(presetUndo){
+    form.elements.body.value=presetUndo.body;statusControl.value=presetUndo.status;presetUndo=null;
+   }
+   draftChanged();
+  });
+  form.onsubmit=e=>{e.preventDefault();const body=form.elements.body.value.trim(),status=statusControl.value;if(!body&&status===ticket.ticket.status)return;statusControl.disabled=true;act(e.submitter,async()=>{const result=await request('/admin/tickets/'+t.id+'/reply',json({body,status,suppress_email:form.elements.suppress_email.checked,revision:ticket.ticket.revision}));updateCachedTicket(result.ticket);ticket.messages=result.messages;$('#ticketMessages').innerHTML=conversation(result.messages);form.reset();presetUndo=null;statusControl.value=result.ticket.status;dirty=false;$('#statusSaved').textContent='状态已保存';$('#replySaved').textContent=result.changed?(result.emailQueued?(body?'已回复并通知':'已更新并通知'):result.emailSuppressed?(body?'已回复，未通知':'已更新，未通知'):(body?'已回复':'已更新')):'无需保存';save.textContent='保存状态';}).then(()=>{statusControl.disabled=false;if(!dirty){save.textContent='保存状态';save.disabled=true;}});};
 
 
  }

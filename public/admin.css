@@ -41,7 +41,7 @@ body:has(.pm-admin){min-width:0}
 
 .a-mail-panel{padding:18px;background:white;border:1px solid var(--a-line);border-radius:5px;margin-bottom:20px;font-size:13px}.a-mail-panel h2{font-size:16px}.a-mail-panel small{display:block;overflow-wrap:anywhere}.a-mail-receipts button{font-size:12px}
 
-.a-reply-presets{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 14px;font-size:12px}.a-reply-presets>span{color:var(--a-muted);margin-right:3px}.pm-admin .a-reply-presets>button:not(.a-text-button){padding:5px 10px;min-height:30px;font-size:12px;background:#fff}.a-reply-presets [hidden]{display:none!important}
+.a-reply-presets{display:flex;align-items:center;flex-wrap:wrap;gap:8px 22px;margin:0 0 14px}.pm-admin .a-reply-presets .a-check{font-size:12px;line-height:1.6;min-height:28px;cursor:pointer;color:var(--a-muted)}
 
 .pm-admin .a-nav a,.pm-admin .a-nav a:hover{text-decoration:none}
 
