@@ -4,7 +4,7 @@ const url=value=>{const u=new URL(value);if(!['https:','http:'].includes(u.proto
 
 // Ordinary correspondence, with the latest message ahead of supporting metadata.
 export function renderFeedbackMail({heading,projectName,number,status,previousStatus,statusCode,body='',attachmentNote='',link,admin=false,userEmail='',preview=false}){
- link=url(link);
+ link=url(link);const logo=new URL('/brand/pingme-mail.png',link).href;
  const transition=previousStatus&&previousStatus!==status?previousStatus+' → '+status:status;
  const project=String(projectName||'PingMe'),subject='[PingMe] '+Array.from(project.replace(/[\r\n]+/g,' ')).slice(0,60).join('')+' · 反馈交流';
  const replyHint=admin?'直接回复此邮件即可答复用户。':'直接回复此邮件即可补充信息，回复会追加到本条反馈。';
@@ -22,6 +22,7 @@ export function renderFeedbackMail({heading,projectName,number,status,previousSt
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse"><tr><td align="center" style="padding:28px 22px">
 <!--[if mso]><table role="presentation" width="580" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:580px;border-collapse:collapse;text-align:left"><tr><td style="word-break:break-word">
+<p style="margin:0 0 22px"><img src="${escape(logo)}" alt="PingMe" width="120" height="32" style="display:block;width:120px;height:32px;border:0"></p>
 <p style="margin:0 0 22px;font-size:13px;line-height:1.8;color:#747b83"><strong style="color:#252a30;font-size:15px">${escape(project)}</strong> · ${escape(heading)}<br>${escape(transition)}</p>
 <div style="font-size:16px;line-height:1.9;color:#252a30;overflow-wrap:anywhere;word-break:break-word">${lines(content)}</div>
 ${attachmentNote?`<p style="margin:18px 0 0;font-size:12px;line-height:1.8;color:#747b83">${escape(attachmentNote)}</p>`:''}
