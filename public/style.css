@@ -234,3 +234,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .app-icon[data-icon="xiaohongshu"]{background:#ff2442}
 
 .app-icon[data-icon="bilibili"]{background:#00a1d6}
+
+.app-icon[data-icon="homepage"]{background:#171717 url('/icons/homepage.svg') center/cover no-repeat}
+.app-icon[data-icon="apt"]{background:#36a5df url('/icons/apt.png') center/cover no-repeat}
+.app-icon[data-icon="homepage"]:after,.app-icon[data-icon="apt"]:after{display:none}

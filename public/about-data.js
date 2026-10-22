@@ -19,8 +19,8 @@ export const personal = {
     { platform: 'NodeSeek', value: 'UID 6666', icon: 'nodeseek', href: 'https://www.nodeseek.com/space/6666#/general' }
   ],
   sites: [
-    { platform: '个人主页', value: 'mjh.im', icon: 'website', href: 'https://mjh.im' },
-    { platform: '越狱源', value: 'apt.mjh.im', icon: 'website', href: 'https://apt.mjh.im' },
+    { platform: '个人主页', value: 'mjh.im', icon: 'homepage', href: 'https://mjh.im' },
+    { platform: '越狱源', value: 'apt.mjh.im', icon: 'apt', href: 'https://apt.mjh.im' },
     { platform: '博客', value: 'shuxin.goforit.si', icon: 'rss', href: 'https://shuxin.goforit.si' }
   ],
   support: [

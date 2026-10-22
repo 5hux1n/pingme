@@ -8,7 +8,7 @@ const REPLY_PRESETS=[
 ];
 const ABOUT=[['profile','个人资料'],['contacts','联系方式'],['communities','社交账号'],['sites','个人站点'],['support','支持开发']];
 const TITLES={contacts:'contactTitle',communities:'communityTitle',sites:'sitesTitle',support:'supportTitle'};
-const ICONS={binance:'币安 Pay',okx:'欧易 Pay',wechat:'微信',whatsapp:'WhatsApp',weibo:'微博',xiaohongshu:'小红书',bilibili:'Bilibili',qq:'QQ',email:'邮箱',telegram:'Telegram',x:'X',douyin:'抖音',github:'GitHub',nodeseek:'NodeSeek',website:'网站',rss:'博客',alipay:'支付宝',paypal:'PayPal',coffee:'Ko-fi'};
+const ICONS={binance:'币安 Pay',okx:'欧易 Pay',wechat:'微信',whatsapp:'WhatsApp',weibo:'微博',xiaohongshu:'小红书',bilibili:'Bilibili',homepage:'个人主页',apt:'越狱源',qq:'QQ',email:'邮箱',telegram:'Telegram',x:'X',douyin:'抖音',github:'GitHub',nodeseek:'NodeSeek',website:'网站',rss:'博客',alipay:'支付宝',paypal:'PayPal',coffee:'Ko-fi'};
 export function createAdmin({root,api,esc,onCatalogChanged=()=>{}}){
  const $=s=>root.querySelector(s),$$=s=>[...root.querySelectorAll(s)];
  let authenticated=false,data,dirty=false,busy=false,view=0,route='inbox',searchTimer,controller,imagePreview;
