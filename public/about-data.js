@@ -4,6 +4,7 @@ export const personal = {
   bio: 'Ideas used to be limited by skills. Not anymore.',
   contacts: [
     { platform: '微信', value: 'qwetech', icon: 'wechat', copy: true },
+    { platform: 'WhatsApp', value: '5hux1n', icon: 'whatsapp', visible: true, mode: 'copy', copy: true },
     { platform: 'QQ', value: '11195666', icon: 'qq', copy: true },
     { platform: '邮箱', value: 'mail@mjh.im', icon: 'email', href: 'mailto:mail@mjh.im', action: '发送邮件', copy: true },
     { platform: 'Telegram', value: '@manjunhong', icon: 'telegram', href: 'https://t.me/manjunhong', action: '发起会话' }

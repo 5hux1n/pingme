@@ -119,6 +119,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .app-tile:hover .app-icon{transform:translateY(-2px)}
 .app-tile:active .app-icon{transform:scale(.94)}
 .app-icon[data-icon="wechat"]{background:#20a957}
+.app-icon[data-icon="whatsapp"]{background:#25d366}
 .app-icon[data-icon="qq"]{background:#2189df}
 .app-icon[data-icon="email"]{background:#de8348}
 .app-icon[data-icon="telegram"]{background:#229ed9}
