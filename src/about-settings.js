@@ -1,6 +1,6 @@
 import { personal as initialPersonal } from '../public/about-data.js';
 export const aboutDefaults={...initialPersonal,homeUrl:'https://mjh.im',homeLabel:'前往个人主页',feedbackLabel:'返回项目反馈',contactTitle:'联系我',communityTitle:'社交账号',sitesTitle:'个人站点',supportTitle:'支持开发',supportText:'通过以下方式支持我的项目，您的支持是我最大的动力。'};
-const icons=new Set(['binance','okx','alipay','coffee','douyin','email','github','nodeseek','paypal','qq','rss','telegram','website','wechat','whatsapp','weibo','xiaohongshu','x']);
+const icons=new Set(['binance','okx','alipay','coffee','douyin','email','github','nodeseek','paypal','qq','rss','telegram','website','wechat','whatsapp','weibo','xiaohongshu','bilibili','x']);
 function text(value,max,label,required=false){if(typeof value!=='string'||value.length>max)throw Error(label+'格式或长度不正确');const result=value.trim();if(required&&!result)throw Error('请填写'+label);return result;}
 function validUrl(value,{image=false,relative=false,mail=false}={}){
  if(!value)return true;if(/[\u0000-\u0020\\]/.test(value))return false;
