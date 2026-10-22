@@ -10,6 +10,7 @@ export const personal = {
     { platform: 'Telegram', value: '@manjunhong', icon: 'telegram', href: 'https://t.me/manjunhong', action: '发起会话' }
   ],
   communities: [
+    { platform: '微博', value: '@俊宏', icon: 'weibo', visible: true, mode: 'link', href: 'https://weibo.com/u/3031532164', action: '访问主页' },
     { platform: 'X', value: '@immajuho', icon: 'x', href: 'https://x.com/immajuho' },
     { platform: '抖音', value: '🌈cc', icon: 'douyin', href: 'https://v.douyin.com/GIri9MmQarY/', action: '查看作品' },
     { platform: 'GitHub', value: '5hux1n', icon: 'github', href: 'https://github.com/5hux1n' },
