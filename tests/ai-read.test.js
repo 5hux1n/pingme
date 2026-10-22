@@ -46,7 +46,7 @@ test('detail omits private fields, internal messages and internal attachments',a
 });
 test('AI keys cannot modify business data, invoke email actions or authenticate admin endpoints',async()=>{
  const f=await setup();const before=JSON.stringify(f.rows('SELECT * FROM tickets'));
- for(const method of ['POST','PATCH','DELETE','PUT','HEAD'])assert.equal((await f.call('/api/ai/feedback/'+f.a,{method})).status,405);
+ for(const method of ['POST','PATCH','DELETE','PUT','HEAD'])assert.equal((await f.call('/api/ai/feedback/'+f.a,{method})).status,method==='PATCH'?403:405);
  assert.equal((await f.call('/api/ai/feedback/'+f.a+'/reply')).status,404);
  assert.equal((await f.call('/api/admin/tickets/'+f.a)).status,401);
  assert.equal(JSON.stringify(f.rows('SELECT * FROM tickets')),before);assert.equal(f.rows('SELECT * FROM notification_jobs').length,0);

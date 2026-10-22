@@ -2,6 +2,7 @@ import {validEmail,changeTicket,visitorEvent,eventStatement,jobStatements} from 
 import {shortTicketToken,validTicketToken,ticketNumber} from './ticket-access.js';
 import {rasterMime} from './feedback-files.js';
 import {aiRead} from './ai-read.js';
+import {aiWrite} from './ai-write.js';
 import {threadStatement,mailWebhook,drainMail} from './mail.js';
 import { notifyFeedback } from './wecom.js';
 import { categories, projectRows, catalogResponse, saveCategory, deleteCategory, projectFields, projectOrder } from './project-catalog.js';
@@ -60,7 +61,7 @@ async function adminSnapshot(env){
 }
 function scheduleMail(env,ctx,ticketId=null){const task=drainMail(env,{ticketId}).catch(()=>console.error('邮件队列暂未处理完成，将由定时任务重试'));if(ctx?.waitUntil)ctx.waitUntil(task);else return task;}
 async function route(request,env,ctx){const url=new URL(request.url), path=url.pathname,method=request.method;
- if(path==='/api/ai'||path.startsWith('/api/ai/'))return aiRead(request,env,rate);
+ if(path==='/api/ai'||path.startsWith('/api/ai/')){if(method==='PATCH'||method==='POST'&&path.endsWith('/reply'))return aiWrite(request,env,rate,(env,id)=>scheduleMail(env,ctx,id));return aiRead(request,env,rate);}
  if(method==='POST'&&path==='/api/mail/webhook'){const response=await mailWebhook(request,env);if(response.ok)scheduleMail(env,ctx);return response;}
  if(!path.startsWith('/api/'))return env.ASSETS.fetch(request);
  if(['GET','HEAD'].includes(method)&&path.startsWith('/api/project-images/'))return serveProjectImage(request,env);

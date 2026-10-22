@@ -1,4 +1,4 @@
 interface:
-  display_name: "PingMe 反馈读取"
-  short_description: "按项目、编号和状态读取反馈详情及交流记录，按需下载附件并结合源码分析问题"
-  default_prompt: "使用 $pingme-feedback 查看指定项目的待处理反馈，读取详情并分析原因。"
+  display_name: "PingMe 反馈处理"
+  short_description: "读取反馈详情并结合源码分析，按授权答复用户和更新处理状态"
+  default_prompt: "使用 $pingme-feedback 查看指定项目的反馈、分析问题，并在我授权的范围内答复用户和更新状态。"

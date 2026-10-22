@@ -1,16 +1,9 @@
+import {authorizeAI,projectScope} from './ai-auth.js';
 import {STATUS} from './ticket-events.js';
 const json=(data,status=200,headers={})=>Response.json(data,{status,headers:{'cache-control':'private, no-store','x-content-type-options':'nosniff',...headers}});
 const error=(status,message,headers)=>json({error:message},status,headers);
-const sha=async value=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))].map(x=>x.toString(16).padStart(2,'0')).join('');
-const equal=(a,b)=>{let diff=a.length^b.length;for(let i=0;i<Math.max(a.length,b.length);i++)diff|=(a.charCodeAt(i)||0)^(b.charCodeAt(i)||0);return diff===0;};
 const slug=/^[a-z0-9-]{1,50}$/;
-function keys(env){
- const rows=JSON.parse(env.AI_READ_KEYS||'[]');
- if(!Array.isArray(rows)||rows.length>50||rows.some(k=>!k||typeof k.id!=='string'||!k.id||!/^[a-f0-9]{64}$/.test(k.hash)||!(k.projects==='*'||(Array.isArray(k.projects)&&k.projects.length>0&&k.projects.every(p=>typeof p==='string'&&slug.test(p))))||!(k.expires_at===null||Number.isSafeInteger(k.expires_at)&&k.expires_at>0)))throw Error('Invalid AI key configuration');
- return rows;
-}
-function scope(key,alias='p') {return key.projects==='*'?{sql:'1=1',params:[]}:{sql:`${alias}.slug IN (${key.projects.map(()=>'?').join(',')})`,params:key.projects};}
-const detailFields='t.id,t.number,t.title,t.body,t.status,t.created_at,t.updated_at,p.name project_name,p.slug project_slug';
+const detailFields='t.id,t.number,t.title,t.body,t.status,t.revision,t.created_at,t.updated_at,p.name project_name,p.slug project_slug';
 const fileFields='a.id,a.message_id,a.name,a.mime,a.bytes,a.created_at';
 const publicFile="(a.message_id IS NULL OR EXISTS(SELECT 1 FROM messages m WHERE m.id=a.message_id AND m.ticket_id=a.ticket_id AND m.role IN ('visitor','admin')))";
 const decorateFile=f=>({...f,download_path:'/api/ai/attachments/'+f.id});
@@ -19,17 +12,8 @@ const decorateFile=f=>({...f,download_path:'/api/ai/attachments/'+f.id});
 export async function aiRead(request,env,rate){
  const url=new URL(request.url),path=url.pathname;
  if(request.method!=='GET')return error(405,'AI 接口仅支持 GET 只读查询',{allow:'GET'});
- let configured;try{configured=keys(env);}catch{return error(503,'AI 只读密钥配置无效');}
- if(!configured.length)return error(503,'AI 只读接口尚未配置');
- const token=request.headers.get('authorization')?.match(/^Bearer (pm_ai_[a-f0-9]{64})$/i)?.[1];
- const digest=token?await sha(token):'';
- const key=configured.find(k=>equal(k.hash,digest));
- if(!key||(key.expires_at!==null&&key.expires_at<=Math.floor(Date.now()/1000))){
-  if(!await rate(env,request,'ai-denied',30,60))return error(429,'请求过于频繁',{ 'retry-after':'60'});
-  return error(401,'AI 密钥无效或已过期',{'www-authenticate':'Bearer realm="PingMe AI read"'});
- }
- if(!await rate(env,request,'ai-read:'+key.id,120,60))return error(429,'请求过于频繁',{'retry-after':'60'});
- const access=scope(key);
+ const auth=await authorizeAI(request,env,rate);if(auth.response)return auth.response;
+ const access=projectScope(auth.key);
  if(path==='/api/ai/projects'){
   const projects=(await env.DB.prepare(`SELECT p.slug,p.name,p.description FROM projects p WHERE ${access.sql} ORDER BY p.sort_order,p.name,p.slug`).bind(...access.params).all()).results;
   return json({projects});
