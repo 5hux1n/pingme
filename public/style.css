@@ -238,3 +238,12 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 .app-icon[data-icon="homepage"]{background:#171717 url('/icons/homepage.svg') center/cover no-repeat}
 .app-icon[data-icon="apt"]{background:#36a5df url('/icons/apt.png') center/cover no-repeat}
 .app-icon[data-icon="homepage"]:after,.app-icon[data-icon="apt"]:after{display:none}
+
+.ongoing,.reply-callout,.merge-choice{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px;margin:0 0 22px;border:1px solid var(--border);border-radius:12px;background:var(--brand-soft);font-size:13px;line-height:1.7}
+.ongoing b,.merge-choice b{display:block;font-size:13px}.ongoing p,.merge-choice p{margin:4px 0 0;color:var(--muted)}
+.ongoing .outline,.reply-callout .outline{flex:none;font-size:12px;padding:9px 14px}
+.merge-choice{display:block;margin:4px 0 21px;background:var(--surface);border-color:var(--primary)}
+.merge-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.reply-callout{margin:0 0 18px}.reply-form{margin-top:35px;padding-top:28px;border-top:1px solid var(--border)}
+.new-issue{margin-top:26px;font-size:12px;color:var(--muted)}.new-issue a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+@media(max-width:660px){.ongoing,.reply-callout{flex-direction:column;align-items:stretch}.merge-actions{flex-direction:column}}
