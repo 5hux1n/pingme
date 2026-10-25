@@ -8,6 +8,7 @@ import { notifyFeedback } from './wecom.js';
 import { categories, projectRows, catalogResponse, saveCategory, deleteCategory, projectFields, projectOrder } from './project-catalog.js';
 import { withImage, fetchImageSource, saveProject, serveProjectImage } from './project-images.js';
 import { readAbout, normalizeAbout, publicAbout, aboutDefaults } from './about-settings.js';
+import { readTheme, saveTheme, isTheme, themeAssets, themeChoices } from './themes.js';
 const json = (data, status = 200, headers = {}) => new Response(JSON.stringify(data), {status, headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff',...headers}});
 const err = (s,m) => json({error:m},s);
 const enc = new TextEncoder();
@@ -57,7 +58,8 @@ async function adminSnapshot(env){
   env.DB.prepare(`SELECT p.slug,p.name FROM projects p LEFT JOIN project_categories c ON c.id=p.category WHERE EXISTS(SELECT 1 FROM tickets t WHERE t.project_id=p.id) ORDER BY ${projectOrder}`)
  ]);
  const config=about.results[0];
- return {feedbackProjects:feedbackProjects.results,ticketTotal:total.results[0].total,projects:projects.results.map(p=>({...p,image_url:withImage(p).image_url})),categories:groups.results,tickets:tickets.results,about:{personal:config?JSON.parse(config.value):structuredClone(aboutDefaults),version:config?.version||0}};
+ const theme=await readTheme(env);
+ return {theme:{...theme,themes:themeChoices()},feedbackProjects:feedbackProjects.results,ticketTotal:total.results[0].total,projects:projects.results.map(p=>({...p,image_url:withImage(p).image_url})),categories:groups.results,tickets:tickets.results,about:{personal:config?JSON.parse(config.value):structuredClone(aboutDefaults),version:config?.version||0}};
 }
 function scheduleMail(env,ctx,ticketId=null){const task=drainMail(env,{ticketId}).catch(()=>console.error('邮件队列暂未处理完成，将由定时任务重试'));if(ctx?.waitUntil)ctx.waitUntil(task);else return task;}
 async function route(request,env,ctx){const url=new URL(request.url), path=url.pathname,method=request.method;
@@ -67,6 +69,7 @@ async function route(request,env,ctx){const url=new URL(request.url), path=url.p
  if(['GET','HEAD'].includes(method)&&path.startsWith('/api/project-images/'))return serveProjectImage(request,env);
  if(method==='GET'&&path==='/api/catalog')return catalogResponse(request,env);
  if(method==='GET'&&path==='/api/about'){const data=await readAbout(env);return json({personal:publicAbout(data.personal)});}
+ if(method==='GET'&&path==='/api/theme'){const preview=url.searchParams.get('preview');if(preview)return isTheme(preview)?json({theme:themeAssets(preview),preview:true}):err(404,'没有这个主题');const t=await readTheme(env);return json({theme:themeAssets(t.id)},200,{'cache-control':'public, max-age=30'});}
  if(method==='GET'&&path==='/api/config')return json({turnstileSiteKey:''});
  if(method==='GET'&&path==='/api/projects'){const [projects,groups]=await Promise.all([projectRows(env,'p.visible=1 AND p.enabled=1'),categories(env)]);return json({projects,categories:groups});}
  if(method==='GET'&&/^\/api\/projects\/[a-z0-9-]+$/.test(path)){const slug=path.split('/')[3];const p=await env.DB.prepare(`SELECT ${projectFields},COALESCE(c.name,'其他项目') category_name FROM projects p LEFT JOIN project_categories c ON c.id=p.category WHERE p.slug=? AND p.enabled=1`).bind(slug).first();return p?json({project:withImage(p)}):err(404,'项目不存在或已关闭');}
@@ -117,6 +120,14 @@ async function route(request,env,ctx){const url=new URL(request.url), path=url.p
  }
  if(method==='GET'&&path==='/api/admin/mail'){return json({configured:!!env.RESEND_API_KEY,receiving:!!env.RESEND_WEBHOOK_SECRET,adminConfigured:!!env.MAIL_ADMIN_TO,inbound:(await env.DB.prepare("SELECT id,email_id,status,error,ticket_id,created_at FROM mail_inbound WHERE status IN ('failed','rejected','unmatched','retry') ORDER BY created_at DESC LIMIT 30").all()).results});}
  if(method==='GET'&&path==='/api/admin/about')return json(await readAbout(env));
+ if(method==='GET'&&path==='/api/admin/theme')return json({...await readTheme(env),themes:themeChoices()});
+ if(method==='PUT'&&path==='/api/admin/theme'){
+  const body=await request.json().catch(()=>null);
+  if(!body||!Number.isSafeInteger(body.version)||body.version<0)return err(400,'外观版本不正确，请刷新后重试');
+  if(!isTheme(body.id))return err(400,'没有这个主题');
+  if(!await saveTheme(env,body.id,body.version))return err(409,'外观已在其他页面修改，请刷新后再试');
+  const saved=await readTheme(env);return json({...saved,themes:themeChoices(),assets:themeAssets(saved.id)});
+ }
  if(method==='PUT'&&path==='/api/admin/about'){
   if(request.headers.get('origin')!==url.origin)return err(403,'请从本站后台保存配置');
   const body=await request.json().catch(()=>null);if(!body||!Number.isSafeInteger(body.version)||body.version<0)return err(400,'配置版本不正确，请刷新后重试');

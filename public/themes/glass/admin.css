@@ -1,0 +1,124 @@
+/* ==========================================================================
+   PingMe · 液态玻璃（后台）
+   由 theme-loader.js 加载，并保持在 admin.css 之后。颜色变量来自同一主题的 site.css。
+   后台是工作界面：玻璃只做顶栏和面板的质感，表格、表单保持清晰、紧凑。
+   ========================================================================== */
+
+.pm-admin {
+  --a-ink: var(--ink);
+  --a-muted: var(--muted);
+  --a-line: var(--line);
+  --a-blue: var(--ping-ink);
+  --a-bg: transparent;
+  color: var(--ink);
+  background: transparent;
+}
+.pm-admin a { color: var(--ping-ink); }
+
+/* 共同质感 */
+.pm-admin .a-top, .pm-admin .a-table, .pm-admin .a-ticket-detail, .pm-admin .a-form:not(.a-about-form), .pm-admin .a-about-card,
+.pm-admin .a-mail-panel, .pm-admin .a-empty, .a-auth main, .pm-admin .a-account > div {
+  background: var(--sheet);
+  -webkit-backdrop-filter: blur(28px) saturate(1.7); backdrop-filter: blur(28px) saturate(1.7);
+  border: 0;
+  box-shadow: inset 1.5px 1.5px 1px var(--hi), inset -1px -1px 1px var(--hi-low), 0 12px 34px -14px var(--drop);
+}
+
+/* ---------- 顶栏：悬浮玻璃胶囊 ---------- */
+.pm-admin .a-top { position: sticky; top: 12px; z-index: 20; max-width: 1160px; margin: 12px auto 0; border-radius: 999px; background: var(--clear); }
+.pm-admin .a-top-inner { min-height: 60px; padding: 0 10px 0 24px; }
+.a-brand img { width: 92px !important; height: auto !important; }
+.a-nav { gap: 4px; align-items: center; }
+.a-nav a { padding: 8px 14px; border-radius: 999px; color: var(--muted); }
+.a-nav a:hover { color: var(--ink); background: var(--clear-hover); }
+.a-nav a[aria-current=page] { color: var(--on-ping); background: var(--ping); box-shadow: inset 1px 1px 1px rgba(255, 255, 255, 0.4), 0 6px 16px -8px var(--ping); }
+.a-nav a[aria-current=page]:after { content: none; }
+.a-account summary { padding: 8px 14px; border-radius: 999px; color: var(--ink); }
+.a-account summary:hover { background: var(--clear-hover); }
+.a-account-chevron { color: var(--muted); }
+.pm-admin .a-account > div { border-radius: 18px; padding: 6px; top: calc(100% + 8px); }
+.pm-admin .a-account a, .pm-admin .a-account button { border-radius: 12px; background: transparent; color: var(--ink); box-shadow: none; }
+.pm-admin .a-account a:hover, .pm-admin .a-account button:hover { background: var(--clear-hover); }
+
+/* ---------- 按钮、输入 ---------- */
+.pm-admin button, .pm-admin .a-button {
+  border: 0; border-radius: 999px; color: var(--ink); background: var(--clear); padding: 7px 15px;
+  -webkit-backdrop-filter: blur(16px) saturate(1.6); backdrop-filter: blur(16px) saturate(1.6);
+  box-shadow: inset 1px 1px 1px var(--hi), inset 0 0 0 1px var(--line);
+}
+.pm-admin button:hover, .pm-admin .a-button:hover { background: var(--clear-hover); text-decoration: none; }
+.pm-admin .primary, .pm-admin button.primary {
+  color: var(--on-ping); background: var(--ping);
+  box-shadow: inset 1px 1px 1px rgba(255, 255, 255, 0.45), inset -1px -1px 1px rgba(0, 0, 0, 0.12), 0 8px 20px -8px var(--ping);
+}
+.pm-admin .primary:hover { background: var(--ping); filter: brightness(1.08); }
+.pm-admin .a-text-button, .pm-admin .a-subnav button { background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; border-radius: 0; }
+.pm-admin .a-danger { color: var(--danger); }
+.pm-admin :focus-visible { outline: 2px solid var(--ping); outline-offset: 3px; }
+
+.pm-admin input, .pm-admin select, .pm-admin textarea {
+  color: var(--ink); background: var(--field); border: 1px solid var(--line-strong); border-radius: 12px;
+}
+.pm-admin input:focus, .pm-admin select:focus, .pm-admin textarea:focus { border-color: var(--ping); box-shadow: 0 0 0 4px var(--ping-soft); outline: none; }
+.pm-admin input[readonly] { background: var(--clear); color: var(--muted); }
+.pm-admin input[type=checkbox] { accent-color: var(--ping); }
+.pm-admin select option { color: #17181f; background: #fff; }
+.a-field > span, .pm-admin legend, .a-status-label { color: var(--muted); }
+.pm-admin fieldset { border-top-color: var(--line); }
+
+/* ---------- 列表 ---------- */
+.pm-admin h1 { font-size: 26px; font-weight: 700; }
+.pm-admin .a-table { border-radius: 24px; overflow: hidden; }
+.a-table th { background: transparent; color: var(--muted); border-top: 0; border-bottom: 1px solid var(--line); padding: 14px 16px 12px; }
+.a-table td { border-bottom: 1px solid var(--line); }
+.a-table tr:last-child td { border-bottom: 0; }
+.a-table tbody tr { transition: background-color .15s; }
+.a-table tbody tr:hover { background: var(--clear-hover); }
+.a-title-link { color: var(--ink) !important; }
+.a-title-link:hover { color: var(--ping-ink) !important; }
+.a-date, .a-tickets td.a-sequence { color: var(--faint); }
+.a-pager { color: var(--muted); }
+.pm-admin .a-empty { border-radius: 24px; border-block: 0; color: var(--muted); }
+
+/* 状态标签：五个状态各一种颜色，深浅模式都清楚 */
+.pm-admin .a-status { border-radius: 999px; padding: 1px 10px; font-weight: 600; background: var(--clear); color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
+.pm-admin .a-status.s-new { background: rgba(64, 140, 255, 0.14); color: #2f6fd6; box-shadow: none; }
+.pm-admin .a-status.s-progress { background: var(--ping-soft); color: var(--ping-ink); box-shadow: none; }
+.pm-admin .a-status.s-resolved { background: rgba(230, 160, 40, 0.16); color: #9a6410; box-shadow: none; }
+.pm-admin .a-status.s-completed { background: rgba(47, 160, 90, 0.14); color: #23804a; box-shadow: none; }
+.pm-admin .a-notice { border: 0; border-radius: 14px; background: rgba(47, 160, 90, 0.12); color: var(--ok); }
+.pm-admin .a-notice.is-error { background: var(--danger-soft); color: var(--danger); }
+
+/* ---------- 详情与表单面板 ---------- */
+.pm-admin .a-ticket-detail, .pm-admin .a-form:not(.a-about-form) { border-radius: 28px; padding: 28px; }
+.pm-admin .a-about-card, .pm-admin .a-mail-panel { border-radius: 20px; }
+.a-detail-meta, .a-properties dt, .a-message time, .a-notify-status, .a-mail-receipts { color: var(--muted); }
+.a-status-edit, .a-conversation, .a-form-footer, .a-category-form, .a-about-item, .a-about-entry > .a-about-item { border-color: var(--line); }
+.a-subnav { border-bottom-color: var(--line); }
+.pm-admin .a-subnav button { color: var(--muted); }
+.pm-admin .a-subnav button[aria-current=page] { color: var(--ink); border-bottom-color: var(--ping); }
+.a-message { border-left: 0; position: relative; padding: 12px 16px; border-radius: 16px; background: var(--clear); }
+.a-message::before { content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 0 3px 3px 0; background: var(--line-strong); }
+.a-message.is-admin::before { background: var(--ping); }
+.a-message.is-internal::before { background: #d2a664; }
+.a-image-upload { border-color: var(--line-strong); border-radius: 14px; background: var(--field); }
+
+/* ---------- 外观页 ---------- */
+.a-theme-option { border: 0; border-radius: 18px; background: var(--clear); box-shadow: inset 1px 1px 1px var(--hi), inset 0 0 0 1px var(--line); }
+.a-theme-option:has(input:checked) { background: var(--ping-soft); box-shadow: inset 1px 1px 1px var(--hi), inset 0 0 0 1.5px var(--ping); }
+.pm-admin .a-theme-current { background: var(--ping); color: var(--on-ping); }
+.a-theme-swatch { border-radius: 10px; box-shadow: inset 0 0 0 1px var(--line); }
+
+/* ---------- 登录 ---------- */
+.a-auth main { border-radius: 30px; padding: 30px; }
+
+@media (max-width: 700px) {
+  .pm-admin .a-top { top: 8px; margin: 8px 12px 0; border-radius: 26px; }
+  .pm-admin .a-top-inner { padding: 8px 10px 8px 18px; }
+  .a-nav { height: auto; padding-bottom: 4px; }
+  .pm-admin .a-table { border-radius: 20px; }
+  .a-table tr { border-bottom-color: var(--line); }
+  .a-table td { border-bottom: 0; }
+  .a-table tbody tr:last-child { border-bottom: 0; }
+  .pm-admin .a-ticket-detail, .pm-admin .a-form:not(.a-about-form) { padding: 20px 16px; border-radius: 22px; }
+}

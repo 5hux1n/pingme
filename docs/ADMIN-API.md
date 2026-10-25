@@ -6,7 +6,7 @@
 
 | 方法 | 路径 | 用途、参数及返回 |
 | --- | --- | --- |
-| POST | /admin/login | `{password}`，非空密码；返回 ok、snapshot，并写入会话 Cookie。snapshot 包含 projects、categories、tickets（前 50 条）、ticketTotal、about。 |
+| POST | /admin/login | `{password}`，非空密码；返回 ok、snapshot，并写入会话 Cookie。snapshot 包含 projects、categories、tickets（前 50 条）、ticketTotal、about、theme。 |
 | GET | /admin/me | 返回 authenticated；已登录时附带 snapshot，用于直接恢复后台。 |
 | POST | /admin/logout | 清除会话 Cookie。 |
 | POST | /admin/password | `{currentPassword,newPassword,confirmPassword}`；新密码任意非空，最多 128 字符。哈希保存并撤销旧会话，成功后重新登录。 |
@@ -23,6 +23,8 @@
 | POST | /admin/categories | `{id,name,description,sort_order}`。id 唯一；名称必填；排序为 0–1000000 整数。 |
 | PATCH | /admin/categories/:id | 保存分类名称、说明及排序。 |
 | DELETE | /admin/categories/:id | 仅删除空分类；默认 other 分类不可删除。 |
+| GET | /admin/theme | 返回当前主题 id、version 及可选主题列表 themes（id、name、description、swatch）。 |
+| PUT | /admin/theme | `{id,version}`，原子版本检查；id 必须是已登记主题；冲突返回 409；成功返回新 id、version、themes 及 assets（同公开接口）。 |
 | GET | /admin/about | 返回 personal、version。 |
 | PUT | /admin/about | `{personal,version}`，原子版本检查，不覆盖其他页面已保存内容；冲突返回 409；成功返回新 personal、version。 |
 
@@ -42,6 +44,7 @@ personal 包含 name、bio、avatar、homeUrl、homeLabel、feedbackLabel、cont
 | GET | /projects/:slug | 正在接收反馈的指定项目。 |
 | GET | /catalog | 个人主页共享项目目录；仅 homepage_visible=1；绝对图片/反馈地址、ETag、CORS，缓存 60 秒。 |
 | GET | /about | 公开个人资料，剔除隐藏条目。 |
+| GET | /theme | 当前主题需要加载的文件：id、themeColor、css、adminCss、js；缓存 30 秒。`?preview=<id>` 返回指定主题且不缓存，仅用于预览，不改变设置。 |
 | GET | /config | 兼容旧客户端，turnstileSiteKey 为空，不启用 CF 验证。 |
 | GET/HEAD | /project-images/:uuid.webp 或 .png | 当前仍被项目引用的 R2 图片，版本 URL 长期缓存。 |
 | POST | /tickets | multipart：project、email、body 必填；body 任意非空，不设字符数限制。可附 files。返回 number、私密 url；异步发送确认邮件、管理员邮件及企业微信通知。 |
@@ -105,3 +108,12 @@ feedback_notifications 记录 pending/sending/sent/failed/unknown/disabled、回
 `GET /api/attachments/:id?inline=1` 在原有管理员会话或反馈 token 鉴权后，只返回经文件头识别的 PNG、JPEG、GIF、WebP 图片；其他文件继续下载，不将 SVG 或 HTML 当图片展示。下载入口不变。响应使用 private/no-store，预览不绕过内部记录权限。反馈详情的附件返回 `message_id`，前端将图片放在对应的原始内容或回复下方。
 
 通知邮件携带本次事件的实际文件内容，不再在正文列出文件下载链接；原始文件合计限制 15MB 以控制 Worker 内存及发送体积，超限或无法读取时通过反馈详情查看。不在后续纯状态通知中反复附上历史文件。
+
+## 主题
+
+主题是叠在原版样式上的一组文件，放在 `public/themes/<id>/`，在 `src/themes.js` 登记。原版（default）不加载任何主题文件。当前主题保存在 site_settings 的 theme 键，后台「外观」页切换后立即生效，无需重新部署。
+
+- `index.html` 头部脚本按浏览器缓存的主题同步插入样式，避免闪烁；`theme-loader.js` 再请求 `/api/theme` 校正，有变化时更新缓存并换上文件。没有缓存时首页首次渲染最多等待 1.5 秒。
+- 从带脚本的主题切走时，已运行的主题脚本无法撤销，页面自动刷新一次。
+- 主题的后台样式始终排在 `admin.css` 之后。
+- 新增主题：放好文件，在 THEMES 加一项（id、name、description、swatch、themeColor 及 css、adminCss、js 路径，带 `?v=` 版本号）。`tests/theme.test.js` 会检查登记的文件都存在。

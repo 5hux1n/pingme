@@ -1,6 +1,6 @@
 import {formatBeijingTime} from './time.js?v=20261019-beijing-time';
 import {feedbackFiles} from './feedback-media.js?v=20261019-feedback-files';
-import { createAdmin } from './admin.js?v=20261022-site-logos';
+import { createAdmin } from './admin.js?v=20261025-themes';
 import {createTicketStore,tokenFromUrl,lastSpeaker,ACTIVE_STATUSES} from './recent-tickets.js?v=20261024-ongoing';
 const ticketStore=createTicketStore();
 const root=document.getElementById('app');
@@ -117,5 +117,5 @@ const admin = createAdmin({root,api,esc,onCatalogChanged:()=>{publicReady=false;
 const adminPage=()=>admin.page();
 let publicReady=false,publicRequest;
 async function loadPublic(){if(publicReady)return;if(!publicRequest)publicRequest=api('/projects').then(p=>{state.projects=p.projects;state.categories=p.categories;publicReady=true;}).finally(()=>publicRequest=null);return publicRequest;}
-async function render(){const path=decodeURIComponent(location.pathname);if(path==='/admin'||path.startsWith('/admin/'))return adminPage();if(!publicReady){try{await loadPublic();}catch{state.projects=[];}if(location.pathname!==path)return;}if(path==='/about')return about();if(path.startsWith('/t/'))return publicDetail(path.slice(3));if(path==='/'||path==='/index.html')return home();if(/^\/[a-z0-9-]+$/.test(path))return formPage(path.slice(1));layout('<main class="shell center">页面不存在。 <a href="/" data-link>返回首页</a></main>');}
+async function render(){if(window.pingmeThemeReady){const ready=window.pingmeThemeReady;window.pingmeThemeReady=null;await ready;}const path=decodeURIComponent(location.pathname);if(path==='/admin'||path.startsWith('/admin/'))return adminPage();if(!publicReady){try{await loadPublic();}catch{state.projects=[];}if(location.pathname!==path)return;}if(path==='/about')return about();if(path.startsWith('/t/'))return publicDetail(path.slice(3));if(path==='/'||path==='/index.html')return home();if(/^\/[a-z0-9-]+$/.test(path))return formPage(path.slice(1));layout('<main class="shell center">页面不存在。 <a href="/" data-link>返回首页</a></main>');}
 render();

@@ -12,6 +12,7 @@
 - 项目管理支持官网、分类、排序、主页展示、反馈展示和是否接收反馈。
 - 图片可上传或填写直链，保存时自动处理成最长边 144px 的 WebP（不支持编码时使用 PNG），存入本站 R2；外链变化或主动更新时重新获取，替换后清理旧对象。
 - 分类维护及个人资料、联系方式、社交账号、个人站点、支持开发配置。
+- 后台「外观」切换站点主题（原版、液态玻璃），保存即生效，无需重新部署；地址加 `?theme=<id>` 可单独预览。主题文件在 `public/themes/`，登记在 `src/themes.js`。
 - 新反馈通过企业微信应用发送 text 通知，后台显示发送回执，失败可手动重试。
 - 桌面和手机使用单一主内容区及正常网页滚动。原生 HTML/CSS/JavaScript，不依赖 React、Ant Design 或运行时组件构建。
 
@@ -78,6 +79,7 @@ npm test
 - `public/admin-image.js` 浏览器图片压缩
 - `src/worker.js` API、鉴权、附件
 - `src/project-catalog.js` 项目目录与分类
+- `src/themes.js`、`public/theme-loader.js`、`public/themes/` 站点主题
 - `src/project-images.js` 图片缓存、导入与项目保存
 - `src/about-settings.js` 个人资料验证与存储
 - `src/wecom.js` 企业微信通知与回执
