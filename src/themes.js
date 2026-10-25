@@ -10,7 +10,7 @@ export const THEMES = [
     id: 'glass', name: '液态玻璃', description: '天蓝和冰青柔光的背景，导航和面板是浮起来的玻璃，主按钮用品牌紫。',
     swatch: ['#eff4f8', '#9ccaff', '#6c5be9'], themeColor: '#eff4f8',
     css: ['/themes/glass/site.css?v=20261025-1'],
-    adminCss: ['/themes/glass/admin.css?v=20261025-1'],
+    adminCss: ['/themes/glass/admin.css?v=20261026-1'],
     js: ['/themes/glass/theme.js?v=20261025-1']
   }
 ];
