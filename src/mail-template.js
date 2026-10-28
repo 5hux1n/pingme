@@ -2,7 +2,8 @@
 // 入参：heading 决定场景；links 为用户邮件底部的「关注更新」（见 mail-links.js），不传时用内置个人站点。
 //
 // 视觉沿用 pingme.pm / mjh.im：浅蓝灰底 + 蓝青光斑、半透明白卡、内高光、柔和投影、紫色胶囊按钮。
-// 降级策略：Apple Mail / iOS 有真实毛玻璃（backdrop-filter）；Gmail 等保留半透明卡片和光斑渐变；
+// 不用 backdrop-filter：部分邮件 App 的 WebKit 不按圆角裁剪模糊区域，会露出直角方块；底下只有渐变，模糊本来也看不出。
+// 圆角元素不加 bgcolor 兜底（个别客户端会画成直角白底）；Gmail 等保留半透明卡片和光斑渐变；
 // Outlook 桌面版回落到纯色底 + 白卡（bgcolor 属性兜底）。
 
 const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -22,7 +23,7 @@ const C = {
 const FONT = "-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Segoe UI',Arial,sans-serif";
 const MONO = "ui-monospace,SFMono-Regular,Menlo,Consolas,monospace";
 const BLOBS = "radial-gradient(circle at 88% 0%,rgba(110,175,255,.42),rgba(110,175,255,0) 46%),radial-gradient(circle at 0% 72%,rgba(110,220,230,.38),rgba(110,220,230,0) 48%)";
-const GLASS = `background-color:${C.glass};-webkit-backdrop-filter:blur(22px) saturate(1.7);backdrop-filter:blur(22px) saturate(1.7);border:1px solid rgba(255,255,255,.7);box-shadow:inset 1.5px 1.5px 1px rgba(255,255,255,.85),inset -1px -1px 1px rgba(255,255,255,.4),0 10px 30px -12px rgba(40,40,90,.16)`;
+const GLASS = `background-color:${C.glass};border:1px solid rgba(255,255,255,.7);box-shadow:inset 1.5px 1.5px 1px rgba(255,255,255,.85),inset -1px -1px 1px rgba(255,255,255,.4),0 10px 30px -12px rgba(40,40,90,.16)`;
 
 // 状态：顺序即处理流程；“不受理”是分支，不进进度条
 const FLOW = ["new", "progress", "resolved", "completed"];
@@ -89,13 +90,13 @@ const linksCard = (list) => {
   const primary = list.find((x) => x.primary), rest = list.filter((x) => !x.primary);
   const tile = (x) => `<a href="${escape(x.href)}" class="pm-tile-a" style="display:block;text-decoration:none;padding:12px 14px"><span class="pm-muted" style="display:block;font-size:11px;line-height:16px;color:${C.muted}">${escape(x.label)}</span><span class="pm-ink pm-tile-v" style="display:block;padding-top:2px;font-size:13px;line-height:19px;font-weight:600;color:${C.ink};word-break:break-all">${escape(x.value || x.href)}</span></a>`;
   const cell = "background-color:" + C.inner + ";border:1px solid rgba(255,255,255,.75);border-radius:16px";
-  const top = primary ? `<tr><td colspan="${rest.length || 1}" style="padding:0 0 8px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate"><tr><td class="pm-tile" bgcolor="#ffffff" style="${cell}">
+  const top = primary ? `<tr><td colspan="${rest.length || 1}" style="padding:0 0 8px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate"><tr><td class="pm-tile" style="${cell}">
 <a href="${escape(primary.href)}" style="display:block;text-decoration:none;padding:14px 16px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse"><tr>
 <td><span class="pm-muted" style="display:block;font-size:11px;line-height:16px;color:${C.muted}">${escape(primary.label)}</span><span class="pm-ink" style="display:block;padding-top:2px;font-size:14px;line-height:20px;font-weight:700;color:${C.ink};overflow-wrap:anywhere">${escape(primary.value || primary.href)}</span></td>
 <td align="right" style="white-space:nowrap;font-size:13px;line-height:20px;font-weight:600;color:${C.accent}" class="pm-link">访问 →</td></tr></table></a>
 </td></tr></table></td></tr>` : "";
-  const row = rest.length ? `<tr>${rest.map((x, i) => `<td width="${Math.floor(100 / rest.length)}%" style="padding:0 ${i < rest.length - 1 ? "8px" : "0"} 0 0;vertical-align:top"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate"><tr><td class="pm-tile" bgcolor="#ffffff" style="${cell}">${tile(x)}</td></tr></table></td>`).join("")}</tr>` : "";
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="pm-glass" bgcolor="#ffffff" style="width:100%;border-collapse:separate;border-radius:24px;${GLASS}"><tr><td style="padding:18px 18px 18px">
+  const row = rest.length ? `<tr>${rest.map((x, i) => `<td width="${Math.floor(100 / rest.length)}%" style="padding:0 ${i < rest.length - 1 ? "8px" : "0"} 0 0;vertical-align:top"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate"><tr><td class="pm-tile" style="${cell}">${tile(x)}</td></tr></table></td>`).join("")}</tr>` : "";
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="pm-glass" style="width:100%;border-collapse:separate;border-radius:24px;${GLASS}"><tr><td style="padding:18px 18px 18px">
 <div class="pm-ink" style="padding:0 2px 12px;font-size:13px;line-height:20px;font-weight:600;color:${C.ink}">关注更新</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;table-layout:fixed">${top}${row}</table>
 </td></tr></table>`;
@@ -156,7 +157,7 @@ export function renderFeedbackMail({ heading, projectName, number, status, previ
     : `<tr><td style="padding:0 0 22px;font-size:12px;line-height:22px">${changed ? chip(prevCode, ";opacity:.6") + `<span class="pm-faint" style="color:${C.faint};padding:0 6px">→</span>` : ""}${chip(code)}</td></tr>`;
 
   // 正文块：一条消息，标注是谁说的
-  const message = `<tr><td class="pm-inner" bgcolor="#ffffff" style="background-color:${C.inner};border:1px solid rgba(255,255,255,.75);border-radius:20px;padding:18px 20px">
+  const message = `<tr><td class="pm-inner" style="background-color:${C.inner};border:1px solid rgba(255,255,255,.75);border-radius:20px;padding:18px 20px">
 ${scene.speaker && !isStatusOnly ? `<div class="pm-muted" style="padding-bottom:8px;font-size:12px;line-height:18px;font-weight:600;color:${C.muted}">${escape(scene.speaker)}</div>` : ""}
 <div class="pm-body" style="font-size:15px;line-height:26px;color:${C.body};overflow-wrap:anywhere;word-break:break-word">${lines(content)}</div>
 ${imageRows ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse">${imageRows}</table>` : ""}
@@ -207,13 +208,13 @@ ${row("当前状态", escape(transition))}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:560px;border-collapse:separate;text-align:left">
 
 <tr><td style="padding:0 0 14px">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="pm-glass" bgcolor="#ffffff" style="width:100%;border-collapse:separate;border-radius:999px;${GLASS}"><tr>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="pm-glass" style="width:100%;border-collapse:separate;border-radius:999px;${GLASS}"><tr>
 <td class="pm-ink" style="padding:11px 20px;font-size:17px;line-height:22px;font-weight:800;letter-spacing:-.02em;color:${C.ink}">pingme<span style="color:${C.accent}">.</span></td>
 <td align="right" class="pm-muted" style="padding:11px 20px;font-size:13px;line-height:22px;color:${C.muted};max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escape(project)}</td>
 </tr></table>
 </td></tr>
 
-<tr><td class="pm-glass pm-card" bgcolor="#ffffff" style="border-radius:30px;padding:32px 32px 30px;word-break:break-word;${GLASS}">
+<tr><td class="pm-glass pm-card" style="border-radius:30px;padding:32px 32px 30px;word-break:break-word;${GLASS}">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate">
 <tr><td style="padding:0 0 ${scene.lead ? "10px" : "18px"}"><h1 class="pm-title pm-ink" style="margin:0;font-size:26px;line-height:34px;font-weight:800;letter-spacing:-.01em;color:${C.ink}">${escape(scene.title)}</h1></td></tr>
 ${scene.lead ? `<tr><td class="pm-muted" style="padding:0 0 20px;font-size:14px;line-height:23px;color:${C.muted}">${escape(scene.lead)}</td></tr>` : ""}
@@ -224,7 +225,7 @@ ${message}
 </td></tr>
 
 <tr><td style="padding:14px 0 0">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="pm-glass" bgcolor="#ffffff" style="width:100%;border-collapse:separate;border-radius:24px;${GLASS}"><tr><td style="padding:20px 24px;word-break:break-word">${helper}</td></tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="pm-glass" style="width:100%;border-collapse:separate;border-radius:24px;${GLASS}"><tr><td style="padding:20px 24px;word-break:break-word">${helper}</td></tr></table>
 </td></tr>
 
 ${linkList.length ? `<tr><td style="padding:14px 0 0">${linksCard(linkList)}</td></tr>` : ""}
