@@ -64,7 +64,7 @@ test('AI updates enqueue one real-format user email and retries never send a sec
  const f=await setup(),p=mockProvider(),original=globalThis.fetch;globalThis.fetch=p.fetch;
  try{
   const body={revision:0,status:'completed',body:'已完成修复'};
-  assert.equal((await f.update(body)).status,200);await f.flush();assert.equal(p.sent.length,1);assert.match(p.sent[0].body.html,/已完成修复/);assert.match(p.sent[0].body.html,/当前状态：已完结/);
+  assert.equal((await f.update(body)).status,200);await f.flush();assert.equal(p.sent.length,1);assert.match(p.sent[0].body.html,/已完成修复/);assert.match(p.sent[0].body.text,/当前状态：已完结/);assert.match(p.sent[0].body.html,/>已完结</);
   assert.equal((await f.update(body)).status,200);await f.flush();assert.equal(p.sent.length,1);
  }finally{await f.flush();globalThis.fetch=original;}
 });

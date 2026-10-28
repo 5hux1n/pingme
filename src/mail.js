@@ -1,4 +1,5 @@
 import {renderFeedbackMail} from './mail-template.js';
+import {loadMailLinks} from './mail-links.js';
 import {mailFiles} from './feedback-files.js';
 import {STATUS,validEmail,changeTicket,visitorEvent} from './ticket-events.js';
 import {notifyFeedback,sendConversationNotice} from './wecom.js';
@@ -33,7 +34,7 @@ export async function emailContent(env,t,event,audience){
  const {attachments,images,omitted}=await mailFiles(env,files);
  const fileCount=attachments.length-images.length;
  const attachmentNote=[fileCount?`包含附件数量：${fileCount} 个。`:'',omitted?`另有 ${omitted} 个文件请通过反馈页面查看。`:''].filter(Boolean).join('');
- const content=renderFeedbackMail({heading,projectName:t.project_name,number:t.number,status,previousStatus:STATUS[event.previous_status]||event.previous_status,statusCode:event.status,body,images,attachmentNote,link,admin,userEmail:admin?t.email:''});
+ const content=renderFeedbackMail({heading,projectName:t.project_name,number:t.number,status,previousStatus:STATUS[event.previous_status]||event.previous_status,statusCode:event.status,body,images,attachmentNote,link,admin,userEmail:admin?t.email:'',links:admin?[]:await loadMailLinks(env,t.project_slug,t.project_name)});
  return {from:env.MAIL_FROM||'PingMe <feedback@pingme.pm>',to:admin?adminAddresses(env):[t.email],reply_to:await replyAddress(env,t.id,audience),...content,...(attachments.length?{attachments}:{}),headers:{'Auto-Submitted':'auto-generated','X-Auto-Response-Suppress':'All',...(/^<[^<>\s]{1,250}>$/.test(parent||'')?{'In-Reply-To':parent,'References':parent}:{})}};
 }
 export async function verifyWebhook(body,headers,secret,now=Date.now()){

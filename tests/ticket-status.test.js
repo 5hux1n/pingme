@@ -15,6 +15,6 @@ test('all five statuses persist and round-trip through email status commands',as
   assert.equal(f.rows("SELECT * FROM tickets WHERE id='status-demo'")[0].status,status);
   const event=f.sql.prepare('SELECT * FROM ticket_events WHERE id=?').get(result.eventId);
   const mail=await emailContent(f.env,{...current,project_name:'测试项目',project_slug:'demo'},event,'visitor');
-  assert.ok(mail.html.includes('当前状态：'+label));assert.ok(mail.text.includes('当前状态：'+label));
+  assert.ok(mail.html.includes('>'+label+'<'));assert.ok(mail.text.includes('当前状态：'+label));
  }
 });
