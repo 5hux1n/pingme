@@ -1,6 +1,6 @@
 import {formatBeijingTime} from './time.js?v=20261019-beijing-time';
 import {feedbackFiles} from './feedback-media.js?v=20261019-feedback-files';
-import { createAdmin } from './admin.js?v=20261025-themes';
+import { createAdmin } from './admin.js?v=20261101-reply-presets';
 import {createTicketStore,tokenFromUrl,lastSpeaker,ACTIVE_STATUSES} from './recent-tickets.js?v=20261024-ongoing';
 const ticketStore=createTicketStore();
 const root=document.getElementById('app');

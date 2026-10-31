@@ -3,8 +3,9 @@ import {feedbackFiles} from './feedback-media.js?v=20261019-feedback-files';
 import {processProjectImage} from './admin-image.js?v=20261019-reply-options';
 const STATUS={new:'待审核',progress:'沟通中',resolved:'待解决',closed:'不受理',completed:'已完结'};
 const REPLY_PRESETS=[
- {label:'已采纳列入开发计划',status:'resolved',body:'感谢您的反馈，您提出的问题或建议已列入后续更新计划，具体完成时间暂未确定。有新进展时会通过邮件通知，您也可以留意官网更新日志。感谢您的耐心与支持！'},
- {label:'已完成该反馈内容',status:'completed',body:'感谢您的反馈，相关问题已完成处理，请更新至最新版本后确认。如仍有异常，或实际效果与预期不符，欢迎直接回复此邮件或在反馈页面继续补充。感谢您的支持！'}
+ {label:'已采纳',status:'resolved',body:'感谢您的反馈，您提出的问题或建议已列入更新计划，发布新版时会通过邮件通知，您也可以留意越狱源（https://apt.mjh.im）或者 TG 频道（https://t.me/junhong.dev）的更新情况，感谢您的耐心与支持！'},
+ {label:'已完成',status:'completed',body:'您好，您反馈的关于【xxx】项目的问题已处理完成，请更新至最新版本后使用。如仍有异常，或实际效果与预期不符，欢迎直接回复此邮件或在反馈页面继续补充。'},
+ {label:'已超时',status:'closed',body:'您好，由于您反馈的问题已超过24小时没有补充信息，已关闭此反馈并且不再处理反馈内容，如需继续处理，您还可以直接回复此邮件或通过反馈中心重新提交反馈。'}
 ];
 const ABOUT=[['profile','个人资料'],['contacts','联系方式'],['communities','社交账号'],['sites','个人站点'],['support','支持开发']];
 const TITLES={contacts:'contactTitle',communities:'communityTitle',sites:'sitesTitle',support:'supportTitle'};
@@ -98,7 +99,7 @@ export function createAdmin({root,api,esc,onCatalogChanged=()=>{}}){
     if(!presetUndo)presetUndo={body:form.elements.body.value,status:statusControl.value};
     const preset=REPLY_PRESETS[Number(input.dataset.replyPreset)];
     presetChecks.forEach(other=>{other.checked=other===input;});
-    form.elements.body.value=preset.body;statusControl.value=preset.status;
+    form.elements.body.value=preset.body.replace('【xxx】',()=>`【${t.project_name}】`);statusControl.value=preset.status;
    }else if(presetUndo){
     form.elements.body.value=presetUndo.body;statusControl.value=presetUndo.status;presetUndo=null;
    }
